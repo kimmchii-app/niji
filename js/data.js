@@ -1,0 +1,417 @@
+// Niji 提示詞詞庫
+// 依 niji 7 的寫作順序排列：先「圖片大方向」（風格→構圖→氛圍→光影→場景），
+// 再「人物小方向」（性別→髮型→眼睛→表情→服裝→動作）。
+// 提示詞輸出會依此順序自動排序，與點選順序無關。
+// 每個分類：group = 所屬大類、hue = 代表色相(0-360，用於選中詞的顏色區分)
+// 每個詞：zh = 顯示名稱、en = 實際提示詞、slug = 對應 images/<slug>/ 資料夾名稱
+// gender = "f"（女性專屬）/ "m"（男性專屬），未標示 = 通用（兩種性別都顯示）。
+// 分類本身也可標 gender（如「臉部毛髮」），性別不符時整格隱藏。
+
+// 性別（人物描述的開頭詞，單選）
+const GENDERS = [
+  { zh: "女性", en: "1girl", key: "female", icon: "👩" },
+  { zh: "男性", en: "1boy", key: "male", icon: "👨" }
+];
+
+const PROMPT_DATA = [
+  /* ========== 圖片大方向 ========== */
+  {
+    category: "畫風",
+    group: "圖片大方向",
+    icon: "🎨",
+    hue: 265,
+    words: [
+      { zh: "賽璐璐動畫", en: "cel shading anime style", slug: "cel-shading" },
+      { zh: "厚塗", en: "impasto painting style", slug: "impasto" },
+      { zh: "水彩", en: "watercolor style", slug: "watercolor" },
+      { zh: "吉卜力風", en: "ghibli inspired style", slug: "ghibli" },
+      { zh: "90年代復古動畫", en: "90s retro anime style", slug: "retro-90s" },
+      { zh: "扁平插畫", en: "flat illustration", slug: "flat-illust" },
+      { zh: "像素風", en: "pixel art style", slug: "pixel-art" },
+      { zh: "黑白漫畫", en: "black and white manga style", slug: "manga-bw" },
+      { zh: "半寫實", en: "semi-realistic style", slug: "semi-realistic" },
+      { zh: "奇幻油畫", en: "exquisite fantasy oil painting", slug: "fantasy-oil-painting" },
+      { zh: "半寫實人像照", en: "half-realistic lady photo", slug: "half-realistic-photo" }
+    ]
+  },
+  {
+    category: "構圖視角",
+    group: "圖片大方向",
+    icon: "📷",
+    hue: 210,
+    words: [
+      { zh: "特寫", en: "close-up shot", slug: "close-up" },
+      { zh: "全身", en: "full body shot", slug: "full-body" },
+      { zh: "仰視", en: "low angle view", slug: "low-angle" },
+      { zh: "俯視", en: "high angle view", slug: "high-angle" },
+      { zh: "側面", en: "side profile", slug: "side-profile" },
+      { zh: "動態構圖", en: "dynamic composition", slug: "dynamic-comp" },
+      { zh: "廣角景深", en: "wide angle depth of field", slug: "wide-angle" },
+      { zh: "半身", en: "half body shot", slug: "half-body" },
+      { zh: "正面", en: "front face", slug: "front-face" }
+    ]
+  },
+  {
+    category: "色調氛圍",
+    group: "圖片大方向",
+    icon: "🌈",
+    hue: 320,
+    words: [
+      { zh: "粉彩色系", en: "pastel color palette", slug: "pastel" },
+      { zh: "高飽和", en: "vibrant saturated colors", slug: "vibrant" },
+      { zh: "低飽和霧感", en: "muted desaturated tones", slug: "muted" },
+      { zh: "暖色調", en: "warm color tones", slug: "warm-tone" },
+      { zh: "冷色調", en: "cool color tones", slug: "cool-tone" },
+      { zh: "夢幻朦朧", en: "dreamy hazy atmosphere", slug: "dreamy" },
+      { zh: "黑暗奇幻", en: "dark fantasy mood", slug: "dark-fantasy" },
+      { zh: "魔幻夢境", en: "magical and dreamy atmosphere", slug: "magical-dreamy" },
+      { zh: "柔和色調", en: "soft tones", slug: "soft-tones" },
+      { zh: "恬靜溫柔", en: "gentle and tranquil mood", slug: "tranquil-mood" },
+      { zh: "靜謐神聖", en: "quiet and sacred feeling", slug: "sacred-feeling" }
+    ]
+  },
+  {
+    category: "光影",
+    group: "圖片大方向",
+    icon: "💡",
+    hue: 45,
+    words: [
+      { zh: "逆光", en: "backlighting", slug: "backlight" },
+      { zh: "黃金時刻", en: "golden hour lighting", slug: "golden-hour" },
+      { zh: "霓虹光", en: "neon lighting", slug: "neon-light" },
+      { zh: "柔和漫射光", en: "soft diffused light", slug: "soft-light" },
+      { zh: "月光", en: "moonlight", slug: "moonlight" },
+      { zh: "電影感打光", en: "cinematic lighting", slug: "cinematic-light" },
+      { zh: "光斑透葉", en: "dappled sunlight", slug: "dappled-light" },
+      { zh: "細膩光線", en: "delicate lighting", slug: "delicate-lighting" }
+    ]
+  },
+  {
+    category: "場景",
+    group: "圖片大方向",
+    icon: "🏞",
+    hue: 145,
+    words: [
+      { zh: "櫻花街道", en: "cherry blossom street", slug: "sakura-street" },
+      { zh: "夜晚都市", en: "night city", slug: "night-city" },
+      { zh: "海邊夕陽", en: "seaside sunset", slug: "seaside-sunset" },
+      { zh: "森林深處", en: "deep forest", slug: "deep-forest" },
+      { zh: "教室", en: "classroom", slug: "classroom" },
+      { zh: "雨中街景", en: "rainy street", slug: "rainy-street" },
+      { zh: "星空草原", en: "starry sky meadow", slug: "starry-meadow" },
+      { zh: "廢墟遺跡", en: "ancient ruins", slug: "ruins" }
+    ]
+  },
+  /* ========== 人物小方向 ========== */
+  // 髮型六分類，依 niji 建議寫作順序：長度 → 質地 → 瀏海 → 造型 → 顏色 → 髮飾
+  {
+    category: "髮型長度",
+    group: "人物小方向",
+    icon: "📏",
+    hue: 20,
+    words: [
+      { zh: "光頭", en: "bald", slug: "bald" },
+      { zh: "平頭", en: "buzz cut", slug: "buzz-cut", gender: "m" },
+      { zh: "寸頭", en: "butch cut", slug: "butch-cut", gender: "m" },
+      { zh: "三分頭", en: "high and tight", slug: "high-and-tight", gender: "m" },
+      { zh: "短髮", en: "short hair", slug: "short-hair" },
+      { zh: "短碎髮", en: "textured crop", slug: "textured-crop", gender: "m" },
+      { zh: "耳上短髮", en: "above-ear hair", slug: "above-ear", gender: "m" },
+      { zh: "鮑伯頭", en: "bob cut", slug: "bob-cut", gender: "f" },
+      { zh: "下巴長度", en: "chin-length hair", slug: "chin-length", gender: "f" },
+      { zh: "中短髮", en: "medium-short hair", slug: "medium-short", gender: "m" },
+      { zh: "及頸", en: "neck-length hair", slug: "neck-length", gender: "m" },
+      { zh: "及肩", en: "shoulder-length hair", slug: "shoulder-length" },
+      { zh: "中長髮", en: "medium-length hair", slug: "medium-length" },
+      { zh: "中長鮑伯", en: "long bob", slug: "long-bob", gender: "f" },
+      { zh: "長髮", en: "long hair", slug: "long-hair" },
+      { zh: "及背長髮", en: "back-length hair", slug: "back-length", gender: "m" },
+      { zh: "及腰", en: "waist-length hair", slug: "waist-length", gender: "f" },
+      { zh: "及臀", en: "hip-length hair", slug: "hip-length", gender: "f" },
+      { zh: "超長髮", en: "absurdly long hair", slug: "absurdly-long-hair" }
+    ]
+  },
+  {
+    category: "髮質捲度",
+    group: "人物小方向",
+    icon: "🌀",
+    hue: 50,
+    words: [
+      { zh: "直髮", en: "straight hair", slug: "straight-hair" },
+      { zh: "微捲", en: "wavy hair", slug: "wavy-hair" },
+      { zh: "大波浪", en: "loose waves", slug: "loose-waves", gender: "f" },
+      { zh: "捲髮", en: "curly hair", slug: "curly-hair" },
+      { zh: "螺旋捲", en: "ringlets", slug: "ringlets", gender: "f" },
+      { zh: "細捲", en: "coily hair", slug: "coily-hair" },
+      { zh: "爆炸頭", en: "afro", slug: "afro" },
+      { zh: "髮量豐厚", en: "voluminous hair", slug: "voluminous-hair" },
+      { zh: "細軟髮", en: "fine hair", slug: "fine-hair", gender: "f" },
+      { zh: "髮量稀疏", en: "thinning hair", slug: "thinning-hair", gender: "m" },
+      { zh: "絲滑", en: "silky hair", slug: "silky-hair" },
+      { zh: "服貼", en: "sleek hair", slug: "sleek-hair", gender: "m" },
+      { zh: "抓髮蠟", en: "styled with wax", slug: "wax-styled", gender: "m" },
+      { zh: "蓬鬆", en: "fluffy hair", slug: "fluffy-hair" },
+      { zh: "飄逸", en: "flowing hair", slug: "flowing-hair", gender: "f" },
+      { zh: "髮絲飛揚", en: "floating hair", slug: "floating-hair", gender: "f" },
+      { zh: "濕髮", en: "wet hair", slug: "wet-hair" },
+      { zh: "分層層次", en: "layered hair", slug: "layered-hair" },
+      { zh: "內彎", en: "inward curl", slug: "inward-curl", gender: "f" },
+      { zh: "外翹", en: "outward flip", slug: "outward-flip" }
+    ]
+  },
+  {
+    category: "瀏海",
+    group: "人物小方向",
+    icon: "✂️",
+    hue: 70,
+    words: [
+      { zh: "無瀏海", en: "no bangs", slug: "no-bangs" },
+      { zh: "全往後梳", en: "swept-back hair", slug: "swept-back", gender: "m" },
+      { zh: "齊瀏海", en: "blunt bangs", slug: "blunt-bangs" },
+      { zh: "碎瀏海", en: "choppy bangs", slug: "choppy-bangs", gender: "m" },
+      { zh: "空氣瀏海", en: "wispy bangs", slug: "wispy-bangs" },
+      { zh: "眉上瀏海", en: "baby bangs", slug: "baby-bangs", gender: "f" },
+      { zh: "側分瀏海", en: "side-swept bangs", slug: "side-swept-bangs" },
+      { zh: "斜瀏海", en: "asymmetrical bangs", slug: "asymmetrical-bangs" },
+      { zh: "法式瀏海", en: "curtain bangs", slug: "curtain-bangs", gender: "f" },
+      { zh: "眉毛長度瀏海", en: "eyebrow-length bangs", slug: "eyebrow-length-bangs" },
+      { zh: "遮眼瀏海", en: "hair over eyes", slug: "hair-over-eyes" },
+      { zh: "遮單眼", en: "hair covering one eye", slug: "hair-over-one-eye", gender: "m" },
+      { zh: "額前碎髮", en: "loose strands over forehead", slug: "loose-strands", gender: "m" },
+      { zh: "M字瀏海", en: "hime cut sidelocks", slug: "hime-sidelocks", gender: "f" },
+      { zh: "中分", en: "center parted hair", slug: "center-part" },
+      { zh: "旁分", en: "side part", slug: "side-part" },
+      { zh: "三七分", en: "deep side part", slug: "deep-side-part" },
+      { zh: "呆毛", en: "ahoge", slug: "ahoge" }
+    ]
+  },
+  {
+    category: "髮型造型",
+    group: "人物小方向",
+    icon: "💇",
+    hue: 330,
+    words: [
+      { zh: "馬尾", en: "ponytail", slug: "ponytail" },
+      { zh: "高馬尾", en: "high ponytail", slug: "high-ponytail", gender: "f" },
+      { zh: "低馬尾", en: "low ponytail", slug: "low-ponytail" },
+      { zh: "側馬尾", en: "side ponytail", slug: "side-ponytail", gender: "f" },
+      { zh: "雙馬尾", en: "twintails", slug: "twintails", gender: "f" },
+      { zh: "低雙馬尾", en: "low twintails", slug: "low-twintails", gender: "f" },
+      { zh: "丸子頭", en: "hair bun", slug: "hair-bun", gender: "f" },
+      { zh: "雙丸子頭", en: "double buns", slug: "double-buns", gender: "f" },
+      { zh: "包頭", en: "chignon", slug: "chignon", gender: "f" },
+      { zh: "髮髻", en: "updo", slug: "updo", gender: "f" },
+      { zh: "凌亂丸子頭", en: "messy bun", slug: "messy-bun", gender: "f" },
+      { zh: "三股辮", en: "braid", slug: "braid", gender: "f" },
+      { zh: "單邊辮", en: "side braid", slug: "side-braid", gender: "f" },
+      { zh: "雙辮", en: "twin braids", slug: "twin-braids", gender: "f" },
+      { zh: "魚骨辮", en: "fishtail braid", slug: "fishtail-braid", gender: "f" },
+      { zh: "法式辮", en: "french braid", slug: "french-braid", gender: "f" },
+      { zh: "荷蘭辮", en: "dutch braid", slug: "dutch-braid", gender: "f" },
+      { zh: "皇冠辮", en: "crown braid", slug: "crown-braid", gender: "f" },
+      { zh: "半綁", en: "half updo", slug: "half-updo" },
+      { zh: "半丸子", en: "half-up bun", slug: "half-up-bun", gender: "f" },
+      { zh: "公主切", en: "hime cut", slug: "hime-cut", gender: "f" },
+      { zh: "狼尾", en: "wolf cut", slug: "wolf-cut" },
+      { zh: "水母頭", en: "jellyfish cut", slug: "jellyfish-cut", gender: "f" },
+      { zh: "蓬鬆亂髮", en: "messy hair", slug: "messy-hair" },
+      { zh: "髮盤起", en: "hair up", slug: "hair-up" },
+      { zh: "髮放下", en: "hair down", slug: "hair-down" },
+      { zh: "兩側推高", en: "undercut", slug: "undercut", gender: "m" },
+      { zh: "漸層推剪", en: "fade", slug: "fade", gender: "m" },
+      { zh: "低漸層", en: "low fade", slug: "low-fade", gender: "m" },
+      { zh: "中漸層", en: "mid fade", slug: "mid-fade", gender: "m" },
+      { zh: "高漸層", en: "high fade", slug: "high-fade", gender: "m" },
+      { zh: "削邊", en: "skin fade", slug: "skin-fade", gender: "m" },
+      { zh: "油頭", en: "pompadour", slug: "pompadour", gender: "m" },
+      { zh: "背頭", en: "slicked-back undercut", slug: "slicked-back-undercut", gender: "m" },
+      { zh: "側背頭", en: "side part with fade", slug: "side-part-fade", gender: "m" },
+      { zh: "飛機頭", en: "quiff", slug: "quiff", gender: "m" },
+      { zh: "莫霍克", en: "mohawk", slug: "mohawk", gender: "m" },
+      { zh: "假莫霍克", en: "faux hawk", slug: "faux-hawk", gender: "m" },
+      { zh: "刺蝟頭", en: "spiky hair", slug: "spiky-hair", gender: "m" },
+      { zh: "蘑菇頭", en: "bowl cut", slug: "bowl-cut", gender: "m" },
+      { zh: "蓋頭髮", en: "mop top", slug: "mop-top", gender: "m" },
+      { zh: "韓系空氣感", en: "korean perm", slug: "korean-perm", gender: "m" },
+      { zh: "男版狼尾", en: "modern mullet", slug: "modern-mullet", gender: "m" },
+      { zh: "小辮子", en: "small braid", slug: "small-braid", gender: "m" },
+      { zh: "髒辮", en: "dreadlocks", slug: "dreadlocks", gender: "m" },
+      { zh: "玉米辮", en: "cornrows", slug: "cornrows", gender: "m" },
+      { zh: "綁髻", en: "topknot", slug: "topknot", gender: "m" },
+      { zh: "武士頭", en: "samurai topknot", slug: "samurai-topknot", gender: "m" }
+    ]
+  },
+  {
+    category: "髮色",
+    group: "人物小方向",
+    icon: "🖌️",
+    hue: 260,
+    words: [
+      { zh: "黑髮", en: "black hair", slug: "black-hair" },
+      { zh: "深棕", en: "dark brown hair", slug: "dark-brown-hair" },
+      { zh: "亞麻", en: "ash brown hair", slug: "ash-brown-hair" },
+      { zh: "金髮", en: "blonde hair", slug: "blonde-hair" },
+      { zh: "白金", en: "platinum blonde", slug: "platinum-blonde" },
+      { zh: "銀髮", en: "silver hair", slug: "silver-hair" },
+      { zh: "白髮", en: "white hair", slug: "white-hair" },
+      { zh: "紅髮", en: "red hair", slug: "red-hair" },
+      { zh: "橘髮", en: "orange hair", slug: "orange-hair" },
+      { zh: "粉髮", en: "pink hair", slug: "pink-hair", gender: "f" },
+      { zh: "紫髮", en: "purple hair", slug: "purple-hair" },
+      { zh: "藍髮", en: "blue hair", slug: "blue-hair" },
+      { zh: "綠髮", en: "green hair", slug: "green-hair" },
+      { zh: "漸層", en: "gradient hair", slug: "gradient-hair" },
+      { zh: "挑染", en: "highlights", slug: "hair-highlights" },
+      { zh: "內層染", en: "underlights", slug: "underlights", gender: "f" },
+      { zh: "雙色", en: "split-dye hair", slug: "split-dye" },
+      { zh: "髮尾漸淡", en: "ombre hair", slug: "ombre-hair" },
+      { zh: "髮梢挑色", en: "colored tips", slug: "colored-tips", gender: "f" },
+      { zh: "髮根深色", en: "dark roots", slug: "dark-roots", gender: "m" },
+      { zh: "灰白夾雜", en: "salt and pepper hair", slug: "salt-and-pepper", gender: "m" }
+    ]
+  },
+  {
+    category: "臉部毛髮",
+    group: "人物小方向",
+    icon: "🧔",
+    hue: 15,
+    gender: "m", // 男性專屬分類：選 1girl 時整格隱藏
+    words: [
+      { zh: "乾淨無鬍", en: "clean-shaven", slug: "clean-shaven" },
+      { zh: "鬍渣", en: "stubble", slug: "stubble" },
+      { zh: "短鬍", en: "short beard", slug: "short-beard" },
+      { zh: "落腮鬍", en: "full beard", slug: "full-beard" },
+      { zh: "山羊鬍", en: "goatee", slug: "goatee" },
+      { zh: "八字鬍", en: "mustache", slug: "mustache" },
+      { zh: "鬢角", en: "sideburns", slug: "sideburns" },
+      { zh: "長鬢角", en: "long sideburns", slug: "long-sideburns" }
+    ]
+  },
+  {
+    category: "髮飾",
+    group: "人物小方向",
+    icon: "🎀",
+    hue: 200,
+    words: [
+      { zh: "髮帶", en: "headband", slug: "headband" },
+      { zh: "蕾絲髮帶", en: "lace headband", slug: "lace-headband", gender: "f" },
+      { zh: "女僕頭飾", en: "maid headdress", slug: "maid-headdress", gender: "f" },
+      { zh: "髮夾", en: "hair clip", slug: "hair-clip" },
+      { zh: "蝴蝶結", en: "hair bow", slug: "hair-bow", gender: "f" },
+      { zh: "髮圈", en: "scrunchie", slug: "scrunchie", gender: "f" },
+      { zh: "髮箍", en: "hair hoop", slug: "hair-hoop" },
+      { zh: "髮網", en: "hairnet", slug: "hairnet", gender: "f" },
+      { zh: "頭紗", en: "veil", slug: "veil", gender: "f" },
+      { zh: "花冠", en: "flower crown", slug: "flower-crown", gender: "f" },
+      { zh: "髮簪", en: "kanzashi", slug: "kanzashi" },
+      { zh: "頭巾", en: "bandana", slug: "bandana", gender: "m" },
+      { zh: "日式頭巾", en: "hachimaki", slug: "hachimaki", gender: "m" },
+      { zh: "耳際夾髮", en: "hair pinned behind ear", slug: "pinned-behind-ear", gender: "m" },
+      { zh: "迷你帽", en: "mini hat", slug: "mini-hat", gender: "f" },
+      { zh: "頭飾", en: "hair ornament", slug: "hair-ornament" }
+    ]
+  },
+  {
+    category: "眼睛",
+    group: "人物小方向",
+    icon: "👁",
+    hue: 235,
+    words: [
+      { zh: "藍色眼睛", en: "blue eyes", slug: "blue-eyes" },
+      { zh: "紅色眼睛", en: "red eyes", slug: "red-eyes" },
+      { zh: "金色眼睛", en: "golden eyes", slug: "golden-eyes" },
+      { zh: "綠色眼睛", en: "green eyes", slug: "green-eyes" },
+      { zh: "紫色眼睛", en: "purple eyes", slug: "purple-eyes" },
+      { zh: "異色瞳", en: "heterochromia eyes", slug: "heterochromia" },
+      { zh: "星光眼", en: "sparkling eyes", slug: "sparkling-eyes" },
+      { zh: "藍色星空眼", en: "blue starry eyes", slug: "blue-starry-eyes" }
+    ]
+  },
+  {
+    category: "氣質特質",
+    group: "人物小方向",
+    icon: "✨",
+    hue: 300,
+    words: [
+      { zh: "成熟優雅", en: "mature and graceful aura", slug: "mature-graceful" },
+      { zh: "五官勻稱", en: "evenly balanced facial features", slug: "balanced-features" },
+      { zh: "細緻曲線", en: "delicate curves", slug: "delicate-curves" }
+    ]
+  },
+  {
+    category: "表情",
+    group: "人物小方向",
+    icon: "😊",
+    hue: 0,
+    words: [
+      { zh: "溫柔微笑", en: "gentle smile", slug: "gentle-smile" },
+      { zh: "開朗大笑", en: "cheerful laugh", slug: "cheerful-laugh" },
+      { zh: "害羞臉紅", en: "shy blushing", slug: "shy-blush" },
+      { zh: "冷酷眼神", en: "cold stare", slug: "cold-stare" },
+      { zh: "驚訝", en: "surprised expression", slug: "surprised" },
+      { zh: "含淚", en: "teary eyes", slug: "teary-eyes" },
+      { zh: "俏皮眨眼", en: "playful wink", slug: "playful-wink" },
+      { zh: "睡意惺忪", en: "sleepy expression on her face", slug: "sleepy-expression" },
+      { zh: "溫柔凝視", en: "soft and gentle gaze", slug: "gentle-gaze" }
+    ]
+  },
+  {
+    category: "服裝",
+    group: "人物小方向",
+    icon: "👗",
+    hue: 180,
+    words: [
+      { zh: "水手服", en: "sailor school uniform", slug: "sailor-uniform" },
+      { zh: "哥德蘿莉", en: "gothic lolita dress", slug: "gothic-lolita" },
+      { zh: "和服", en: "traditional kimono", slug: "kimono" },
+      { zh: "旗袍", en: "cheongsam dress", slug: "cheongsam" },
+      { zh: "騎士鎧甲", en: "knight armor", slug: "knight-armor" },
+      { zh: "魔法師長袍", en: "wizard robe", slug: "wizard-robe" },
+      { zh: "休閒連帽衫", en: "casual hoodie", slug: "hoodie" },
+      { zh: "禮服", en: "elegant evening gown", slug: "evening-gown" },
+      { zh: "公主服", en: "princess dress", slug: "princess-dress" },
+      { zh: "蕾絲白睡衣", en: "puffy pure white pajama with sleeves and edges decorated with lace", slug: "white-lace-pajama" }
+    ]
+  },
+  {
+    category: "動作姿勢",
+    group: "人物小方向",
+    icon: "🕺",
+    hue: 95,
+    words: [
+      { zh: "回眸", en: "looking back over shoulder", slug: "looking-back" },
+      { zh: "奔跑", en: "running pose", slug: "running" },
+      { zh: "坐姿", en: "sitting pose", slug: "sitting" },
+      { zh: "躺臥", en: "lying down", slug: "lying-down" },
+      { zh: "伸手向前", en: "reaching out hand", slug: "reaching-out" },
+      { zh: "持劍戰鬥", en: "sword fighting stance", slug: "sword-stance" },
+      { zh: "跳躍", en: "jumping mid-air", slug: "jumping" },
+      { zh: "坐在窗台", en: "sitting by the window", slug: "sitting-window" },
+      { zh: "手捧魔法書", en: "holding a magic book in her hands", slug: "holding-book" }
+    ]
+  },
+  {
+    category: "隨身道具",
+    group: "人物小方向",
+    icon: "🔮",
+    hue: 120,
+    words: [
+      { zh: "日月飾球", en: "a sun and a moon decorative orb surrounding by her side, orbs emitting a soft orange glow", slug: "sun-moon-orbs" },
+      { zh: "魔法古書", en: "the book cover made of brown leather with four golden corners is opened and resting in her hands", slug: "magic-book" }
+    ]
+  },
+  /* ========== 背景裝飾（輸出時排在最後） ========== */
+  {
+    category: "裝飾元素",
+    group: "背景裝飾",
+    icon: "🏛",
+    hue: 30,
+    words: [
+      { zh: "巴洛克裝飾", en: "ornate elegance of Baroque decoration", slug: "baroque-decor" },
+      { zh: "金色巴洛克邊框", en: "golden Baroque ornament border", slug: "baroque-border" },
+      { zh: "星空石雕", en: "mystique of starry stone carvings", slug: "starry-stone-carving" },
+      { zh: "天空石雕背景", en: "a sky stone-carved background", slug: "sky-stone-background" }
+    ]
+  }
+];
+

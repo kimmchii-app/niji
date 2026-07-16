@@ -1,0 +1,5 @@
+# Visual Studio
+.vs/
+
+# Claude Code 本機設定（含指向本機暫存目錄的 launch.json）
+.claude/
