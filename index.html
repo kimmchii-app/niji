@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a2733">
+<title>Niji 提示詞配搭工具</title>
+<link rel="stylesheet" href="css/style.css?v=20260716g">
+</head>
+<body>
+
+<header class="app-header">
+  <h1>Niji 提示詞配搭工具</h1>
+  <button class="theme-toggle" id="themeToggle" title="切換深淺色主題">🌙</button>
+</header>
+
+<!-- 選中詞的顯示區 -->
+<section class="selected-area" id="selectedArea">
+  <div class="selected-chips" id="selectedChips">
+    <p class="empty-hint" id="emptyHint">尚未選擇提示詞，請從下方分類點選 ✨</p>
+  </div>
+  <div class="prompt-bar">
+    <code class="prompt-text" id="promptText"></code>
+    <div class="prompt-actions">
+      <button class="btn btn-copy" id="copyBtn" title="複製提示詞">📋 複製</button>
+      <button class="btn btn-clear" id="clearBtn" title="清除全部">🗑 清空</button>
+    </div>
+  </div>
+</section>
+
+<main class="layout">
+
+  <!-- 左側：大方向頁籤 + 分類圖示 + 下方選項區 -->
+  <aside class="category-panel" id="categoryPanel">
+    <div class="cat-grid" id="catGrid"></div>
+    <div class="option-drawer" id="optionDrawer">
+      <p class="drawer-hint">點上方分類格子，選項會出現在這裡</p>
+    </div>
+  </aside>
+
+  <!-- 右側：圖片輪播區 -->
+  <section class="gallery-panel" id="galleryPanel">
+    <p class="gallery-hint" id="galleryHint">選詞後，這裡會隨機輪播對應的參考圖片</p>
+    <div class="slideshow" id="slideshow" hidden>
+      <figure class="slide-stage">
+        <img id="slideImg" alt="">
+        <figcaption class="slide-caption" id="slideCaption"></figcaption>
+      </figure>
+      <div class="slide-controls">
+        <button class="btn slide-btn" id="prevBtn" type="button">⬅ 上一張</button>
+        <span class="slide-counter" id="slideCounter"></span>
+        <button class="btn slide-btn" id="nextBtn" type="button">下一張 ➡</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/data.js?v=20260716g"></script>
+<script src="js/app.js?v=20260716g"></script>
+</body>
+</html>
