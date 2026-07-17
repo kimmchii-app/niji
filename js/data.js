@@ -6,11 +6,30 @@
 // 每個詞：zh = 顯示名稱、en = 實際提示詞、slug = 對應 images/<slug>/ 資料夾名稱
 // gender = "f"（女性專屬）/ "m"（男性專屬），未標示 = 通用（兩種性別都顯示）。
 // 分類本身也可標 gender（如「臉部毛髮」），性別不符時整格隱藏。
+// en 內可用 {poss} 代名詞佔位符：組句時依性別自動填入 her/his，未選性別時填 their。
 
 // 性別（人物描述的開頭詞，單選）
 const GENDERS = [
   { zh: "女性", en: "1girl", key: "female", icon: "👩" },
   { zh: "男性", en: "1boy", key: "male", icon: "👨" }
+];
+
+const CLOTHING_COLORS = [
+  { zh: "黑色", en: "black", key: "black" },
+  { zh: "白色", en: "white", key: "white" },
+  { zh: "紅色", en: "red", key: "red" },
+  { zh: "橘色", en: "orange", key: "orange" },
+  { zh: "粉色", en: "pink", key: "pink" },
+  { zh: "藍色", en: "blue", key: "blue" },
+  { zh: "深藍色", en: "deep blue", key: "deep-blue" },
+  { zh: "綠色", en: "green", key: "green" },
+  { zh: "紫色", en: "purple", key: "purple" },
+  { zh: "金色", en: "gold", key: "gold" },
+  { zh: "米色", en: "beige", key: "beige" },
+  { zh: "卡其色", en: "khaki", key: "khaki" },
+  { zh: "灰色", en: "gray", key: "gray" },
+  { zh: "棕色", en: "brown", key: "brown" },
+  { zh: "青色", en: "cyan", key: "cyan" }
 ];
 
 const PROMPT_DATA = [
@@ -23,10 +42,12 @@ const PROMPT_DATA = [
     words: [
       { zh: "厚塗", en: "impasto painting style", slug: "impasto" },
       { zh: "水彩", en: "watercolor style", slug: "watercolor" },
+      { zh: "動漫風格", en: "anime style", slug: "anime-style" },
       { zh: "扁平插畫", en: "flat illustration", slug: "flat-illust" },
       { zh: "半寫實", en: "semi-realistic style", slug: "semi-realistic" },
       { zh: "半寫實寫真插畫", en: "semi-realistic portrait illustration", slug: "semi-realistic-portrait" },
       { zh: "奇幻油畫", en: "exquisite fantasy oil painting", slug: "fantasy-oil-painting" },
+      { zh: "復古油畫", en: "vintage oil painting style", slug: "vintage-oil-painting" },
       { zh: "Y2K風", en: "Y2K aesthetic", slug: "y2k" },
       { zh: "絕佳傑作", en: "masterpiece", slug: "masterpiece" }
     ]
@@ -44,6 +65,7 @@ const PROMPT_DATA = [
       { zh: "側面", en: "side profile", slug: "side-profile" },
       { zh: "動態構圖", en: "dynamic composition", slug: "dynamic-comp" },
       { zh: "廣角景深", en: "wide angle depth of field", slug: "wide-angle" },
+      { zh: "多角度視角", en: "multi-angle view", slug: "multi-angle-view" },
       { zh: "半身", en: "half body shot", slug: "half-body" },
       { zh: "正面", en: "front face", slug: "front-face" },
       { zh: "側身看鏡頭", en: "side profile looking at viewer", slug: "side-look-viewer" },
@@ -71,7 +93,8 @@ const PROMPT_DATA = [
       { zh: "朝氣活潑用色", en: "cheerful vibrant colors", slug: "cheerful-colors" },
       { zh: "美式復古餐廳", en: "retro American diner color palette", slug: "diner-palette" },
       { zh: "淡彩", en: "pale color palette", slug: "pale-tones" },
-      { zh: "高鮮明度", en: "highly vivid colors", slug: "high-vivid" }
+      { zh: "高鮮明度", en: "highly vivid colors", slug: "high-vivid" },
+      { zh: "空靈感性", en: "ethereal and emotional atmosphere", slug: "ethereal-emotional" }
     ]
   },
   {
@@ -87,7 +110,11 @@ const PROMPT_DATA = [
       { zh: "月光", en: "moonlight", slug: "moonlight" },
       { zh: "電影感打光", en: "cinematic lighting", slug: "cinematic-light" },
       { zh: "光斑透葉", en: "dappled sunlight", slug: "dappled-light" },
-      { zh: "細膩光線", en: "delicate lighting", slug: "delicate-lighting" }
+      { zh: "細膩光線", en: "delicate lighting", slug: "delicate-lighting" },
+      { zh: "晴朗日光", en: "bright sunny daylight", slug: "bright-sunny-daylight" },
+      { zh: "溫暖光線", en: "warm lighting", slug: "warm-lighting" },
+      { zh: "彩繪玻璃光影", en: "colorful light streaming through stained glass and casting patterns on the floor", slug: "stained-glass-light" },
+      { zh: "光影", en: "light and shadow", slug: "light-and-shadow" }
     ]
   },
   {
@@ -103,7 +130,19 @@ const PROMPT_DATA = [
       { zh: "教室", en: "classroom", slug: "classroom" },
       { zh: "雨中街景", en: "rainy street", slug: "rainy-street" },
       { zh: "星空草原", en: "starry sky meadow", slug: "starry-meadow" },
-      { zh: "廢墟遺跡", en: "ancient ruins", slug: "ruins" }
+      { zh: "廢墟遺跡", en: "ancient ruins", slug: "ruins" },
+      { zh: "豪宅陽台", en: "balcony of a luxurious mansion", slug: "luxury-mansion-balcony" },
+      { zh: "綠色花園迷宮", en: "green garden maze", slug: "green-garden-maze" },
+      { zh: "游泳池", en: "swimming pool", slug: "swimming-pool" },
+      { zh: "莊嚴教堂", en: "an elegant and solemn church", slug: "solemn-church" },
+      { zh: "浴室", en: "bathroom", slug: "bathroom" },
+      { zh: "中式室內陽光", en: "sunlight streaming into a Chinese-style interior", slug: "sunlit-chinese-interior" },
+      { zh: "街道", en: "street", slug: "street" },
+      { zh: "森林", en: "forest", slug: "forest" },
+      { zh: "工作室", en: "workshop", slug: "workshop" },
+      { zh: "溫暖室內", en: "a warm and cozy interior", slug: "warm-cozy-interior" },
+      { zh: "窗外下雪", en: "snow falling outside the window", slug: "snow-outside-window" },
+      { zh: "玫瑰花園", en: "a rose garden", slug: "rose-garden" }
     ]
   },
   /* ========== 角色設定 ========== */
@@ -271,6 +310,7 @@ const PROMPT_DATA = [
     detail: true,
     words: [
       { zh: "黑髮", en: "black hair", slug: "black-hair" },
+      { zh: "棕髮", en: "brown hair", slug: "brown-hair" },
       { zh: "深棕", en: "dark brown hair", slug: "dark-brown-hair" },
       { zh: "亞麻", en: "ash brown hair", slug: "ash-brown-hair" },
       { zh: "金髮", en: "blonde hair", slug: "blonde-hair" },
@@ -282,6 +322,7 @@ const PROMPT_DATA = [
       { zh: "粉髮", en: "pink hair", slug: "pink-hair", gender: "f" },
       { zh: "紫髮", en: "purple hair", slug: "purple-hair" },
       { zh: "藍髮", en: "blue hair", slug: "blue-hair" },
+      { zh: "深藍髮", en: "dark blue hair", slug: "dark-blue-hair" },
       { zh: "綠髮", en: "green hair", slug: "green-hair" },
       { zh: "亮紅髮", en: "bright red hair", slug: "bright-red-hair" },
       // effect: 染髮效果（單選）。two: 需要第二色；tpl: 組句模板，{a}=基本色、{b}=第二色（顏色名不含 hair）
@@ -329,6 +370,7 @@ const PROMPT_DATA = [
       { zh: "髮網", en: "hairnet", slug: "hairnet", gender: "f" },
       { zh: "頭紗", en: "veil", slug: "veil", gender: "f" },
       { zh: "花冠", en: "flower crown", slug: "flower-crown", gender: "f" },
+      { zh: "大型花帽", en: "large flower hat", slug: "large-flower-hat", gender: "f" },
       { zh: "髮簪", en: "kanzashi", slug: "kanzashi" },
       { zh: "頭巾", en: "bandana", slug: "bandana", gender: "m" },
       { zh: "日式頭巾", en: "hachimaki", slug: "hachimaki", gender: "m" },
@@ -343,14 +385,21 @@ const PROMPT_DATA = [
     icon: "👁",
     hue: 235,
     words: [
-      { zh: "藍色眼睛", en: "blue eyes", slug: "blue-eyes" },
-      { zh: "紅色眼睛", en: "red eyes", slug: "red-eyes" },
-      { zh: "金色眼睛", en: "golden eyes", slug: "golden-eyes" },
-      { zh: "綠色眼睛", en: "green eyes", slug: "green-eyes" },
-      { zh: "紫色眼睛", en: "purple eyes", slug: "purple-eyes" },
-      { zh: "異色瞳", en: "heterochromia eyes", slug: "heterochromia" },
+      { zh: "藍色眼睛", en: "blue eyes", slug: "blue-eyes", eyeColor: "blue" },
+      { zh: "深藍眼睛", en: "deep blue eyes", slug: "deep-blue-eyes", eyeColor: "deep blue" },
+      { zh: "黑色眼睛", en: "black eyes", slug: "black-eyes", eyeColor: "black" },
+      { zh: "白色眼睛", en: "white eyes", slug: "white-eyes", eyeColor: "white" },
+      { zh: "黑眼圈", en: "dark circles under his eyes", slug: "dark-circles", gender: "m" },
+      { zh: "紅色眼睛", en: "red eyes", slug: "red-eyes", eyeColor: "red" },
+      { zh: "深紅眼睛", en: "crimson red eyes", slug: "crimson-red-eyes", eyeColor: "crimson red" },
+      { zh: "金色眼睛", en: "golden eyes", slug: "golden-eyes", eyeColor: "gold" },
+      { zh: "綠色眼睛", en: "green eyes", slug: "green-eyes", eyeColor: "green" },
+      { zh: "紫色眼睛", en: "purple eyes", slug: "purple-eyes", eyeColor: "purple" },
+      { zh: "異色瞳", en: "heterochromia eyes", slug: "heterochromia", heterochromia: true },
       { zh: "星光眼", en: "sparkling eyes", slug: "sparkling-eyes" },
-      { zh: "藍色星空眼", en: "blue starry eyes", slug: "blue-starry-eyes" }
+      { zh: "藍色星空眼", en: "blue starry eyes", slug: "blue-starry-eyes" },
+      { zh: "深藍星空眼", en: "starry dark blue eyes", slug: "dark-blue-starry-eyes" },
+      { zh: "右眼淚痣", en: "a tear mole under the right eye", slug: "right-eye-tear-mole" }
     ]
   },
   {
@@ -360,10 +409,15 @@ const PROMPT_DATA = [
     hue: 300,
     words: [
       { zh: "成熟優雅", en: "mature and graceful aura", slug: "mature-graceful" },
+      { zh: "淑女優雅", en: "ladylike elegance", slug: "ladylike-elegance", gender: "f" },
+      { zh: "高貴嚴肅", en: "noble and serious demeanor", slug: "noble-serious", gender: "f" },
+      { zh: "成熟男性", en: "mature man", slug: "mature-man", gender: "m" },
       { zh: "五官勻稱", en: "evenly balanced facial features", slug: "balanced-features" },
       { zh: "細緻曲線", en: "delicate curves", slug: "delicate-curves" },
       { zh: "纖細身材", en: "slender figure", slug: "slender-figure" },
-      { zh: "元氣桃色妝", en: "fresh peachy makeup", slug: "peachy-makeup", gender: "f" }
+      { zh: "元氣桃色妝", en: "fresh peachy makeup", slug: "peachy-makeup", gender: "f" },
+      { zh: "皮膚蒼白", en: "pale skin", slug: "pale-skin" },
+      { zh: "沾到鮮奶油", en: "dabs of whipped cream on the nose and shoulders", slug: "cream-dabs" }
     ]
   },
   {
@@ -379,8 +433,11 @@ const PROMPT_DATA = [
       { zh: "驚訝", en: "surprised expression", slug: "surprised" },
       { zh: "含淚", en: "teary eyes", slug: "teary-eyes" },
       { zh: "俏皮眨眼", en: "playful wink", slug: "playful-wink" },
-      { zh: "睡意惺忪", en: "sleepy expression on her face", slug: "sleepy-expression" },
-      { zh: "溫柔凝視", en: "soft and gentle gaze", slug: "gentle-gaze" }
+      { zh: "睡意惺忪", en: "sleepy expression on {poss} face", slug: "sleepy-expression" },
+      { zh: "溫柔凝視", en: "soft and gentle gaze", slug: "gentle-gaze" },
+      { zh: "甜蜜喜悅笑容", en: "sweet and joyful smile", slug: "sweet-joyful-smile" },
+      { zh: "驚恐", en: "a frightened expression", slug: "frightened-expression" },
+      { zh: "冷顏", en: "a cold expression", slug: "cold-expression" }
     ]
   },
   {
@@ -396,11 +453,42 @@ const PROMPT_DATA = [
       { zh: "騎士鎧甲", en: "knight armor", slug: "knight-armor" },
       { zh: "魔法師長袍", en: "wizard robe", slug: "wizard-robe" },
       { zh: "休閒連帽衫", en: "casual hoodie", slug: "hoodie" },
+      { zh: "黑框眼鏡", en: "black-framed glasses", slug: "black-framed-glasses" },
+      { zh: "白色實驗袍", en: "white lab coat", slug: "white-lab-coat" },
+      { zh: "深藍金邊襯衫", en: "deep blue shirt with gold trim", slug: "blue-gold-shirt", gender: "m" },
+      { zh: "黑色西裝褲", en: "black suit pants", slug: "black-suit-pants", gender: "m" },
+      { zh: "白色祭司袍", en: "white priestly robes", slug: "white-priestly-robes", gender: "f" },
+      { zh: "白色新郎禮服", en: "white groom's outfit", slug: "white-groom-outfit", gender: "m" },
+      { zh: "米色校服", en: "beige school uniform", slug: "beige-school-uniform" },
       { zh: "禮服", en: "elegant evening gown", slug: "evening-gown" },
       { zh: "公主服", en: "princess dress", slug: "princess-dress" },
       { zh: "蕾絲白睡衣", en: "puffy pure white pajama with sleeves and edges decorated with lace", slug: "white-lace-pajama" },
-      { zh: "紅色奶油花邊洋裝", en: "red whipped-cream frill dress with soft sheen", slug: "cream-frill-dress", gender: "f" },
-      { zh: "奶油蕾絲波浪袖", en: "creamy lace wavy sleeves", slug: "cream-lace-sleeves", gender: "f" }
+      { zh: "方框眼鏡", en: "square-framed glasses", slug: "square-framed-glasses" },
+      { zh: "白色短袖", en: "white short-sleeved shirt", slug: "white-short-sleeved-shirt" },
+      { zh: "卡其色短褲", en: "khaki shorts", slug: "khaki-shorts" },
+      { zh: "墨鏡", en: "sunglasses", slug: "sunglasses" },
+      { zh: "印花短袖襯衫", en: "printed short-sleeved shirt", slug: "printed-short-sleeved-shirt" },
+      { zh: "寬鬆長褲", en: "loose-fitting pants", slug: "loose-fitting-pants" },
+      { zh: "白色古風服裝", en: "white traditional Chinese attire", slug: "white-chinese-attire" },
+      { zh: "護目鏡", en: "protective goggles", slug: "protective-goggles" },
+      { zh: "橘色短袖", en: "orange short-sleeved shirt", slug: "orange-short-sleeved-shirt" },
+      { zh: "棉褲", en: "cotton pants", slug: "cotton-pants" },
+      { zh: "拖鞋", en: "slippers", slug: "slippers" },
+      { zh: "黑色襯衫", en: "black shirt", slug: "black-shirt" },
+      { zh: "白色西裝褲", en: "white suit pants", slug: "white-suit-pants" },
+      { zh: "紅色領帶", en: "red tie", slug: "red-tie" },
+      { zh: "粉色毛衣", en: "pink sweater", slug: "pink-sweater" },
+      { zh: "粉紅色小禮服", en: "pink mini dress", slug: "pink-mini-dress", gender: "f" },
+      { zh: "襯衫", en: "shirt", slug: "clothing-shirt", colorable: true },
+      { zh: "短袖上衣", en: "short-sleeved shirt", slug: "clothing-short-sleeved-shirt", colorable: true },
+      { zh: "連身裙", en: "dress", slug: "clothing-dress", colorable: true, gender: "f" },
+      { zh: "小禮服", en: "mini dress", slug: "clothing-mini-dress", colorable: true, gender: "f" },
+      { zh: "毛衣", en: "sweater", slug: "clothing-sweater", colorable: true },
+      { zh: "長褲", en: "pants", slug: "clothing-pants", colorable: true },
+      { zh: "短褲", en: "shorts", slug: "clothing-shorts", colorable: true },
+      { zh: "西裝褲", en: "suit pants", slug: "clothing-suit-pants", colorable: true },
+      { zh: "領帶", en: "tie", slug: "clothing-tie", colorable: true },
+      { zh: "古風服裝", en: "traditional Chinese attire", slug: "clothing-chinese-attire", colorable: true }
     ]
   },
   {
@@ -414,11 +502,19 @@ const PROMPT_DATA = [
       { zh: "坐姿", en: "sitting pose", slug: "sitting" },
       { zh: "躺臥", en: "lying down", slug: "lying-down" },
       { zh: "伸手向前", en: "reaching out hand", slug: "reaching-out" },
-      { zh: "持劍戰鬥", en: "sword fighting stance", slug: "sword-stance" },
       { zh: "跳躍", en: "jumping mid-air", slug: "jumping" },
+      { zh: "陽台佇立", en: "standing on the balcony", slug: "standing-on-balcony" },
       { zh: "坐在窗台", en: "sitting by the window", slug: "sitting-window" },
-      { zh: "手捧魔法書", en: "holding a magic book in her hands", slug: "holding-book" },
-      { zh: "柔軟動作", en: "soft graceful pose", slug: "soft-pose" }
+      { zh: "柔軟動作", en: "soft graceful pose", slug: "soft-pose" },
+      { zh: "單手撐在窗邊", en: "one hand braced against the window frame", slug: "one-hand-on-window" },
+      { zh: "一手擋太陽", en: "shielding the sunlight with one hand", slug: "shielding-sunlight" },
+      { zh: "單手撐頭", en: "resting {poss} head on one hand", slug: "head-on-one-hand" },
+      { zh: "維修物品", en: "repairing something", slug: "repairing-something" },
+      { zh: "看向窗戶", en: "looking toward the window", slug: "looking-toward-window" },
+      { zh: "坐在沙發上", en: "sitting on a sofa", slug: "sitting-on-sofa" },
+      { zh: "身蓋毯子", en: "covered with a blanket", slug: "covered-with-blanket" },
+      { zh: "花園下午茶", en: "sitting and enjoying afternoon tea in the rose garden", slug: "rose-garden-afternoon-tea" },
+      { zh: "S曲線", en: "S-curve pose", slug: "s-curve-pose", gender: "f" }
     ]
   },
   {
@@ -426,11 +522,20 @@ const PROMPT_DATA = [
     group: "角色設定",
     icon: "🔮",
     hue: 120,
+    single: true,
+    picker: "item",
     words: [
-      { zh: "日月飾球", en: "a sun and a moon decorative orb surrounding by her side, orbs emitting a soft orange glow", slug: "sun-moon-orbs" },
-      { zh: "魔法古書", en: "the book cover made of brown leather with four golden corners is opened and resting in her hands", slug: "magic-book" },
-      { zh: "頭頂奶油櫻桃", en: "a swirl of white whipped cream topped with a cherry on her head", slug: "cream-cherry-head", gender: "f" },
-      { zh: "沾到鮮奶油", en: "dabs of whipped cream on the nose and shoulders", slug: "cream-dabs" }
+      { zh: "魔法古書", en: "the book cover made of brown leather with four golden corners is opened and resting in {poss} hands", slug: "magic-book" },
+      { zh: "木製魔杖", en: "holding a wooden magic wand", slug: "wooden-magic-wand" },
+      { zh: "手持香菸盒", en: "holding a pack of cigarettes", slug: "cigarette-pack", gender: "m" },
+      { zh: "手持書卷", en: "holding a scroll", slug: "holding-scroll" },
+      { zh: "手持木劍", en: "holding a wooden sword", slug: "holding-wooden-sword" },
+      { zh: "手持毛筆", en: "holding a calligraphy brush", slug: "holding-calligraphy-brush" },
+      { zh: "手持螺絲起子", en: "holding a screwdriver", slug: "holding-screwdriver" },
+      { zh: "手持手機", en: "holding a smartphone", slug: "holding-smartphone" },
+      { zh: "手持聖經", en: "holding a Bible", slug: "holding-bible" },
+      { zh: "手持書本", en: "holding a book", slug: "holding-book-generic" },
+      { zh: "手持玫瑰花", en: "holding a rose", slug: "holding-rose" }
     ]
   },
   /* ========== 背景裝飾（輸出時排在最後） ========== */
@@ -440,10 +545,42 @@ const PROMPT_DATA = [
     icon: "🏛",
     hue: 30,
     words: [
-      { zh: "巴洛克裝飾", en: "ornate elegance of Baroque decoration", slug: "baroque-decor" },
       { zh: "金色巴洛克邊框", en: "golden Baroque ornament border", slug: "baroque-border" },
+      { zh: "實驗與魔法設備", en: "various laboratory instruments and magical equipment in the background", slug: "lab-magic-equipment" },
+      { zh: "黑霧環繞", en: "surrounded by black mist", slug: "surrounded-black-mist" },
+      { zh: "紅花環繞", en: "surrounded by red flowers", slug: "surrounded-red-flowers" },
+      { zh: "橘貓相伴", en: "an orange cat nearby", slug: "orange-cat-nearby" },
+      { zh: "鬼怪", en: "a ghostly apparition", slug: "ghostly-apparition" },
+      { zh: "石桌", en: "a stone table", slug: "stone-table" },
+      { zh: "壁爐", en: "a fireplace", slug: "fireplace" },
+      { zh: "爐火", en: "a warm fire burning in the fireplace", slug: "fireplace-fire" },
+      { zh: "日月飾球", en: "a sun and a moon decorative orb surrounding by {poss} side, orbs emitting a soft orange glow", slug: "sun-moon-orbs" },
+      { zh: "桌上黃金聖杯", en: "a golden chalice displayed on the table in front", slug: "golden-chalice-table" },
+      { zh: "桌上長劍", en: "a sword displayed on the table in front", slug: "sword-on-table" },
+      { zh: "大袋金幣", en: "a large bag of gold coins placed on the tabletop", slug: "large-bag-gold-coins" }
+    ]
+  },
+  {
+    category: "神聖的裝飾",
+    group: "背景裝飾",
+    icon: "✨",
+    hue: 265,
+    words: [
       { zh: "星空石雕", en: "mystique of starry stone carvings", slug: "starry-stone-carving" },
-      { zh: "天空石雕背景", en: "a sky stone-carved background", slug: "sky-stone-background" }
+      { zh: "天空石雕背景", en: "a sky stone-carved background", slug: "sky-stone-background" },
+      { zh: "聖光光環", en: "a halo of sacred light behind her head", slug: "sacred-light-halo", gender: "f" },
+      { zh: "黑白立柱", en: "black and white pillars on their left and right respectively", slug: "black-white-pillars" },
+      { zh: "新月圖騰", en: "a decorative crescent moon totem centered at their feet", slug: "crescent-moon-totem" }
+    ]
+  },
+  {
+    category: "飄落物",
+    group: "背景裝飾",
+    icon: "🍃",
+    hue: 340,
+    words: [
+      { zh: "粉色花瓣飄舞", en: "surrounded by fluttering pink petals", slug: "fluttering-pink-petals" },
+      { zh: "彩色泡泡漂浮", en: "colorful bubbles floating around", slug: "floating-colorful-bubbles" }
     ]
   },
   {
