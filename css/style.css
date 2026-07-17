@@ -411,6 +411,53 @@ body {
 }
 
 .word-list { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* 重開髮色細節視窗的按鈕（選了髮型後出現在抽屜底部） */
+.hair-color-open {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  border: 1px dashed var(--accent-strong);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s;
+  touch-action: manipulation;
+}
+.hair-color-open:hover { filter: brightness(0.96); }
+
+/* 髮色細節彈出視窗 */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 25, 35, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 50;
+}
+.modal-backdrop[hidden] { display: none; }
+.hair-modal {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  width: min(520px, 100%);
+  max-height: 82vh;
+  max-height: 82dvh;
+  overflow-y: auto;
+  padding: 16px;
+  animation: pop 0.18s ease-out;
+}
+.hair-modal .drawer-title { margin-top: 12px; }
+.hair-modal .drawer-title:first-child { margin-top: 0; }
+.modal-sub { color: var(--text-dim); font-size: 0.82rem; margin-bottom: 4px; }
+.modal-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
 .word-btn {
   border: 1px solid var(--word-border);
   background: var(--word-bg);
