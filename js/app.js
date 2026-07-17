@@ -138,7 +138,7 @@
       const group = groups.find(g => g.name === activeGroup);
       panel.innerHTML = "";
 
-      if (group.name === "人物小方向") {
+      if (group.name === "角色設定") {
         const row = document.createElement("div");
         row.className = "gender-row";
         GENDERS.forEach(gd => {
@@ -193,8 +193,9 @@
     renderDrawer();
   }
 
-  // 選中這些分類的髮型時，會彈出髮色細節視窗
+  // 髮型結構分類；只有選擇「髮型長度」時會自動彈出髮色視窗
   const HAIR_STRUCT_CATS = ["髮型長度", "髮質捲度", "瀏海", "髮型造型"];
+  const HAIR_MODAL_TRIGGER_CATS = ["髮型長度"];
   const HAIR_COLOR_CAT = PROMPT_DATA.find(c => c.detail);
 
   function buildWordList(words, onPick) {
@@ -250,13 +251,17 @@
 
   function openHairModal() {
     modalBackdrop.hidden = false;
-    renderHairModal();
+    buildHairModal();
   }
   function closeHairModal() {
     modalBackdrop.hidden = true;
   }
 
-  function renderHairModal() {
+  // 視窗只在開啟時重建一次；之後點按鈕只做局部更新（選中狀態、第二色區顯示），
+  // 避免整窗重繪讓開窗動畫重播、畫面跳動
+  let secondSection = null, secondTitle = null, secondHint = null, secondList = null;
+
+  function buildHairModal() {
     modalBackdrop.innerHTML = "";
     const panel = document.createElement("div");
     panel.className = "hair-modal";
@@ -274,10 +279,8 @@
     sub.textContent = styleNames.length ? `目前髮型：${styleNames.join("、")}` : "尚未選擇髮型";
     panel.appendChild(sub);
 
-    const base = selectedHairBase();
-    const fx = selectedHairFx();
-    const fxWord = fx ? wordIndex[fx] : null;
-    const refresh = slug => { toggleWord(slug); renderHairModal(); };
+    // 基本色/效果按鈕帶 data-slug，選中狀態由 renderCategoryState 就地更新
+    const refresh = slug => { toggleWord(slug); updateHairModal(); };
 
     const baseTitle = document.createElement("p");
     baseTitle.className = "drawer-title";
@@ -291,38 +294,33 @@
     panel.appendChild(fxTitle);
     panel.appendChild(buildWordList(HAIR_COLOR_CAT.words.filter(w => w.effect && wordVisible(w)), refresh));
 
-    // 需要雙色的效果（漸層、雙色等）→ 挑第二色
-    if (fxWord && fxWord.two) {
-      const secondTitle = document.createElement("p");
-      secondTitle.className = "drawer-title";
-      secondTitle.textContent = `🎯 第二色（${fxWord.zh}）`;
-      panel.appendChild(secondTitle);
-      if (!base) {
-        const hint = document.createElement("p");
-        hint.className = "modal-sub";
-        hint.textContent = "先選基本髮色，才能挑第二色";
-        panel.appendChild(hint);
-      } else {
-        const secondList = document.createElement("div");
-        secondList.className = "word-list";
-        HAIR_COLOR_CAT.words
-          .filter(w => !w.effect && w.slug !== base && wordVisible(w))
-          .forEach(w => {
-            const btn = document.createElement("button");
-            btn.className = "word-btn" + (hairSecond === w.slug ? " active" : "");
-            btn.type = "button";
-            btn.textContent = w.zh;
-            btn.title = w.en;
-            btn.addEventListener("click", () => {
-              setHairSecond(hairSecond === w.slug ? "" : w.slug);
-              render();
-              renderHairModal();
-            });
-            secondList.appendChild(btn);
-          });
-        panel.appendChild(secondList);
-      }
-    }
+    // 第二色區：常駐於視窗 DOM，依所選效果顯示/隱藏
+    secondSection = document.createElement("div");
+    secondTitle = document.createElement("p");
+    secondTitle.className = "drawer-title";
+    secondSection.appendChild(secondTitle);
+    secondHint = document.createElement("p");
+    secondHint.className = "modal-sub";
+    secondHint.textContent = "先選基本髮色，才能挑第二色";
+    secondSection.appendChild(secondHint);
+    secondList = document.createElement("div");
+    secondList.className = "word-list";
+    HAIR_COLOR_CAT.words.filter(w => !w.effect && wordVisible(w)).forEach(w => {
+      const btn = document.createElement("button");
+      btn.className = "word-btn";
+      btn.type = "button";
+      btn.textContent = w.zh;
+      btn.title = w.en;
+      btn.dataset.second = w.slug;
+      btn.addEventListener("click", () => {
+        setHairSecond(hairSecond === w.slug ? "" : w.slug);
+        render();
+        updateHairModal();
+      });
+      secondList.appendChild(btn);
+    });
+    secondSection.appendChild(secondList);
+    panel.appendChild(secondSection);
 
     const actions = document.createElement("div");
     actions.className = "modal-actions";
@@ -335,7 +333,25 @@
     panel.appendChild(actions);
 
     modalBackdrop.appendChild(panel);
-    renderCategoryState(); // 標記視窗內基本色/效果按鈕的選中狀態
+    renderCategoryState(); // 標記基本色/效果按鈕的選中狀態
+    updateHairModal();
+  }
+
+  // 局部更新：第二色區的顯示與按鈕狀態（與基本色相同的按鈕停用）
+  function updateHairModal() {
+    if (modalBackdrop.hidden || !secondSection) return;
+    const base = selectedHairBase(), fx = selectedHairFx();
+    const fw = fx ? wordIndex[fx] : null;
+    const show = !!(fw && fw.two);
+    secondSection.hidden = !show;
+    if (!show) return;
+    secondTitle.textContent = `🎯 第二色（${fw.zh}）`;
+    secondHint.hidden = !!base;
+    secondList.hidden = !base;
+    secondList.querySelectorAll(".word-btn").forEach(btn => {
+      btn.disabled = btn.dataset.second === base;
+      btn.classList.toggle("active", hairSecond === btn.dataset.second);
+    });
   }
 
   function renderCategoryState() {
@@ -356,7 +372,7 @@
     // 頁籤上的已選數量
     document.querySelectorAll(".gcount").forEach(badge => {
       let n = selected.filter(s => PROMPT_DATA[wordIndex[s].catIdx].group === badge.dataset.group).length;
-      if (badge.dataset.group === "人物小方向" && selectedGender) n += 1;
+      if (badge.dataset.group === "角色設定" && selectedGender) n += 1;
       badge.textContent = n;
       badge.classList.toggle("show", n > 0);
     });
@@ -386,7 +402,7 @@
     normalizeHairSecond();
     render();
     // 選中髮型（長度/質地/瀏海/造型）時彈出髮色細節視窗
-    if (idx < 0 && HAIR_STRUCT_CATS.includes(w.category)) openHairModal();
+    if (idx < 0 && HAIR_MODAL_TRIGGER_CATS.includes(w.category)) openHairModal();
   }
 
   function loadSelection() {
@@ -407,8 +423,8 @@
     // 選中詞 chips（依 niji 7 順序排列、以分類色區分；性別 chip 排在人物詞最前）
     const ordered = sortForPrompt(selected);
     const groupOf = slug => PROMPT_DATA[wordIndex[slug].catIdx].group;
-    const bigSlugs = ordered.filter(s => groupOf(s) === "圖片大方向");
-    const charSlugs = ordered.filter(s => groupOf(s) === "人物小方向");
+    const bigSlugs = ordered.filter(s => groupOf(s) === "畫面設定");
+    const charSlugs = ordered.filter(s => groupOf(s) === "角色設定");
     const tailSlugs = ordered.filter(s => groupOf(s) === "背景裝飾");
     const gender = GENDERS.find(g => g.key === selectedGender);
 
@@ -735,6 +751,14 @@
     saveSelection();
     render();
     showToast("已清空");
+  });
+
+  /* ===== 使用說明彈窗 ===== */
+  const helpModal = document.getElementById("helpModal");
+  document.getElementById("helpToggle").addEventListener("click", () => { helpModal.hidden = false; });
+  document.getElementById("helpClose").addEventListener("click", () => { helpModal.hidden = true; });
+  helpModal.addEventListener("click", e => {
+    if (e.target === helpModal) helpModal.hidden = true;
   });
 
   /* ===== 深淺色主題切換 ===== */

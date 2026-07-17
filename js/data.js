@@ -1,6 +1,6 @@
 // Niji 提示詞詞庫
-// 依 niji 7 的寫作順序排列：先「圖片大方向」（風格→構圖→氛圍→光影→場景），
-// 再「人物小方向」（性別→髮型→眼睛→表情→服裝→動作）。
+// 依 niji 7 的寫作順序排列：先「畫面設定」（風格→構圖→氛圍→光影→場景），
+// 再「角色設定」（性別→髮型→眼睛→表情→服裝→動作）。
 // 提示詞輸出會依此順序自動排序，與點選順序無關。
 // 每個分類：group = 所屬大類、hue = 代表色相(0-360，用於選中詞的顏色區分)
 // 每個詞：zh = 顯示名稱、en = 實際提示詞、slug = 對應 images/<slug>/ 資料夾名稱
@@ -14,10 +14,10 @@ const GENDERS = [
 ];
 
 const PROMPT_DATA = [
-  /* ========== 圖片大方向 ========== */
+  /* ========== 畫面設定 ========== */
   {
     category: "畫風",
-    group: "圖片大方向",
+    group: "畫面設定",
     icon: "🎨",
     hue: 265,
     words: [
@@ -33,7 +33,7 @@ const PROMPT_DATA = [
   },
   {
     category: "構圖視角",
-    group: "圖片大方向",
+    group: "畫面設定",
     icon: "📷",
     hue: 210,
     words: [
@@ -53,7 +53,7 @@ const PROMPT_DATA = [
   },
   {
     category: "色調氛圍",
-    group: "圖片大方向",
+    group: "畫面設定",
     icon: "🌈",
     hue: 320,
     words: [
@@ -76,7 +76,7 @@ const PROMPT_DATA = [
   },
   {
     category: "光影",
-    group: "圖片大方向",
+    group: "畫面設定",
     icon: "💡",
     hue: 45,
     words: [
@@ -92,7 +92,7 @@ const PROMPT_DATA = [
   },
   {
     category: "場景",
-    group: "圖片大方向",
+    group: "畫面設定",
     icon: "🏞",
     hue: 145,
     words: [
@@ -106,13 +106,13 @@ const PROMPT_DATA = [
       { zh: "廢墟遺跡", en: "ancient ruins", slug: "ruins" }
     ]
   },
-  /* ========== 人物小方向 ========== */
+  /* ========== 角色設定 ========== */
   // 髮型六分類，依 niji 建議寫作順序：長度 → 質地 → 瀏海 → 造型 → 顏色 → 髮飾
   // single: true = 該分類單選（重選自動替換）
   // detail: true = 不顯示分類格子，改在髮型細節區選（髮色）；effect: true = 細節區的「效果」複選詞
   {
     category: "髮型長度",
-    group: "人物小方向",
+    group: "角色設定",
     icon: "📏",
     hue: 20,
     single: true,
@@ -140,7 +140,7 @@ const PROMPT_DATA = [
   },
   {
     category: "髮質捲度",
-    group: "人物小方向",
+    group: "角色設定",
     icon: "🌀",
     hue: 50,
     single: true,
@@ -169,7 +169,7 @@ const PROMPT_DATA = [
   },
   {
     category: "瀏海",
-    group: "人物小方向",
+    group: "角色設定",
     icon: "✂️",
     hue: 70,
     single: true,
@@ -197,7 +197,7 @@ const PROMPT_DATA = [
   },
   {
     category: "髮型造型",
-    group: "人物小方向",
+    group: "角色設定",
     icon: "💇",
     hue: 330,
     single: true,
@@ -265,7 +265,7 @@ const PROMPT_DATA = [
   },
   {
     category: "髮色",
-    group: "人物小方向",
+    group: "角色設定",
     icon: "🖌️",
     hue: 260,
     detail: true,
@@ -297,7 +297,7 @@ const PROMPT_DATA = [
   },
   {
     category: "臉部毛髮",
-    group: "人物小方向",
+    group: "角色設定",
     icon: "🧔",
     hue: 15,
     gender: "m", // 男性專屬分類：選 1girl 時整格隱藏
@@ -314,7 +314,7 @@ const PROMPT_DATA = [
   },
   {
     category: "髮飾",
-    group: "人物小方向",
+    group: "角色設定",
     icon: "🎀",
     hue: 200,
     single: true,
@@ -339,7 +339,7 @@ const PROMPT_DATA = [
   },
   {
     category: "眼睛",
-    group: "人物小方向",
+    group: "角色設定",
     icon: "👁",
     hue: 235,
     words: [
@@ -355,7 +355,7 @@ const PROMPT_DATA = [
   },
   {
     category: "氣質特質",
-    group: "人物小方向",
+    group: "角色設定",
     icon: "✨",
     hue: 300,
     words: [
@@ -368,7 +368,7 @@ const PROMPT_DATA = [
   },
   {
     category: "表情",
-    group: "人物小方向",
+    group: "角色設定",
     icon: "😊",
     hue: 0,
     words: [
@@ -385,7 +385,7 @@ const PROMPT_DATA = [
   },
   {
     category: "服裝",
-    group: "人物小方向",
+    group: "角色設定",
     icon: "👗",
     hue: 180,
     words: [
@@ -405,7 +405,7 @@ const PROMPT_DATA = [
   },
   {
     category: "動作姿勢",
-    group: "人物小方向",
+    group: "角色設定",
     icon: "🕺",
     hue: 95,
     words: [
@@ -423,7 +423,7 @@ const PROMPT_DATA = [
   },
   {
     category: "隨身道具",
-    group: "人物小方向",
+    group: "角色設定",
     icon: "🔮",
     hue: 120,
     words: [
@@ -458,4 +458,3 @@ const PROMPT_DATA = [
     ]
   }
 ];
-
