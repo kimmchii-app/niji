@@ -25,7 +25,8 @@
   PROMPT_DATA.forEach((cat, catIdx) =>
     cat.words.forEach((w, wIdx) => {
       // gender 未標時繼承分類層級的 gender（如「臉部毛髮」整類男性專屬）
-      wordIndex[w.slug] = { ...w, category: cat.category, hue: cat.hue, catIdx, wIdx, gender: w.gender || cat.gender };
+      // catSingle/catDetail 記錄分類的單選與細節（髮色）屬性，供 toggleWord 判斷
+      wordIndex[w.slug] = { ...w, category: cat.category, hue: cat.hue, catIdx, wIdx, gender: w.gender || cat.gender, catSingle: cat.single, catDetail: cat.detail };
     })
   );
 
@@ -68,6 +69,29 @@
     return cat.words.some(wordVisible);
   }
 
+  /* ===== 髮色細節（基本色 + 效果 + 第二色） ===== */
+  const HAIR_SECOND_KEY = "niji-hair-second";
+  let hairSecond = localStorage.getItem(HAIR_SECOND_KEY) || "";
+  if (!wordIndex[hairSecond] || !wordIndex[hairSecond].catDetail || wordIndex[hairSecond].effect) hairSecond = "";
+
+  function setHairSecond(slug) {
+    hairSecond = slug;
+    localStorage.setItem(HAIR_SECOND_KEY, hairSecond);
+  }
+  function selectedHairBase() {
+    return selected.find(s => wordIndex[s].catDetail && !wordIndex[s].effect) || "";
+  }
+  function selectedHairFx() {
+    return selected.find(s => wordIndex[s].catDetail && wordIndex[s].effect) || "";
+  }
+  // 第二色只有在「效果需要雙色 + 已選基本色」時才有意義，其餘情況自動清掉
+  function normalizeHairSecond() {
+    const base = selectedHairBase(), fx = selectedHairFx();
+    const ok = fx && wordIndex[fx].two && base && hairSecond &&
+      hairSecond !== base && wordIndex[hairSecond] && wordVisible(wordIndex[hairSecond]);
+    if (!ok && hairSecond) setHairSecond("");
+  }
+
   /* ===== 大方向頁籤 + 分類圖示 + 下方選項區 ===== */
   function buildCategories() {
     const groups = [];
@@ -101,10 +125,10 @@
     panel.id = "groupPanel";
     catGrid.appendChild(panel);
 
-    // 目前分類被性別過濾隱藏時，退回該群組第一個可見分類
+    // 目前分類被性別過濾隱藏時，退回該群組第一個可見分類（detail 分類不顯示格子）
     function ensureActiveCategoryVisible() {
       const group = groups.find(g => g.name === activeGroup);
-      const visibleCats = group.cats.filter(catVisible);
+      const visibleCats = group.cats.filter(c => !c.detail && catVisible(c));
       if (!visibleCats.some(c => c.category === activeCategory)) {
         activeCategory = (visibleCats[0] || group.cats[0]).category;
       }
@@ -131,6 +155,7 @@
             const removed = selected.length - kept.length;
             selected = kept;
             saveSelection();
+            normalizeHairSecond();
             ensureActiveCategoryVisible();
             renderGroupPanel();
             renderDrawer();
@@ -144,7 +169,7 @@
 
       const tiles = document.createElement("div");
       tiles.className = "group-tiles";
-      group.cats.filter(catVisible).forEach(cat => {
+      group.cats.filter(c => !c.detail && catVisible(c)).forEach(cat => {
         const tile = document.createElement("button");
         tile.className = "cat-tile";
         tile.type = "button";
@@ -168,27 +193,149 @@
     renderDrawer();
   }
 
-  function renderDrawer() {
-    const cat = PROMPT_DATA.find(c => c.category === activeCategory);
-    optionDrawer.innerHTML = "";
-    const title = document.createElement("p");
-    title.className = "drawer-title";
-    title.textContent = `${cat.icon} ${cat.category}`;
-    optionDrawer.appendChild(title);
+  // 選中這些分類的髮型時，會彈出髮色細節視窗
+  const HAIR_STRUCT_CATS = ["髮型長度", "髮質捲度", "瀏海", "髮型造型"];
+  const HAIR_COLOR_CAT = PROMPT_DATA.find(c => c.detail);
 
+  function buildWordList(words, onPick) {
     const list = document.createElement("div");
     list.className = "word-list";
-    cat.words.filter(wordVisible).forEach(w => {
+    words.forEach(w => {
       const btn = document.createElement("button");
       btn.className = "word-btn";
       btn.type = "button";
       btn.textContent = w.zh;
       btn.title = w.en;
       btn.dataset.slug = w.slug;
-      btn.addEventListener("click", () => toggleWord(w.slug));
+      btn.addEventListener("click", () => (onPick || toggleWord)(w.slug));
       list.appendChild(btn);
     });
-    optionDrawer.appendChild(list);
+    return list;
+  }
+
+  function renderDrawer() {
+    const cat = PROMPT_DATA.find(c => c.category === activeCategory);
+    optionDrawer.innerHTML = "";
+    const title = document.createElement("p");
+    title.className = "drawer-title";
+    title.textContent = `${cat.icon} ${cat.category}${cat.single ? "（單選）" : ""}`;
+    optionDrawer.appendChild(title);
+
+    optionDrawer.appendChild(buildWordList(cat.words.filter(wordVisible)));
+
+    // 已選髮型時，提供重開髮色細節視窗的按鈕
+    const hairSelected = selected.some(s => HAIR_STRUCT_CATS.includes(wordIndex[s].category));
+    if (HAIR_STRUCT_CATS.includes(cat.category) && hairSelected) {
+      const base = selectedHairBase(), fx = selectedHairFx();
+      let status = base ? wordIndex[base].zh : "未選色";
+      if (fx) status += `＋${wordIndex[fx].zh}`;
+      if (hairSecond) status += `→${wordIndex[hairSecond].zh}`;
+      const openBtn = document.createElement("button");
+      openBtn.className = "hair-color-open";
+      openBtn.type = "button";
+      openBtn.textContent = `🎨 髮色細節（${status}）`;
+      openBtn.addEventListener("click", openHairModal);
+      optionDrawer.appendChild(openBtn);
+    }
+  }
+
+  /* ===== 髮色細節彈出視窗 ===== */
+  const modalBackdrop = document.createElement("div");
+  modalBackdrop.className = "modal-backdrop";
+  modalBackdrop.hidden = true;
+  document.body.appendChild(modalBackdrop);
+  modalBackdrop.addEventListener("click", e => {
+    if (e.target === modalBackdrop) closeHairModal();
+  });
+
+  function openHairModal() {
+    modalBackdrop.hidden = false;
+    renderHairModal();
+  }
+  function closeHairModal() {
+    modalBackdrop.hidden = true;
+  }
+
+  function renderHairModal() {
+    modalBackdrop.innerHTML = "";
+    const panel = document.createElement("div");
+    panel.className = "hair-modal";
+
+    const title = document.createElement("p");
+    title.className = "drawer-title";
+    title.textContent = "🎨 髮色細節";
+    panel.appendChild(title);
+
+    const styleNames = selected
+      .filter(s => HAIR_STRUCT_CATS.includes(wordIndex[s].category))
+      .map(s => wordIndex[s].zh);
+    const sub = document.createElement("p");
+    sub.className = "modal-sub";
+    sub.textContent = styleNames.length ? `目前髮型：${styleNames.join("、")}` : "尚未選擇髮型";
+    panel.appendChild(sub);
+
+    const base = selectedHairBase();
+    const fx = selectedHairFx();
+    const fxWord = fx ? wordIndex[fx] : null;
+    const refresh = slug => { toggleWord(slug); renderHairModal(); };
+
+    const baseTitle = document.createElement("p");
+    baseTitle.className = "drawer-title";
+    baseTitle.textContent = "🖌️ 基本髮色（單選）";
+    panel.appendChild(baseTitle);
+    panel.appendChild(buildWordList(HAIR_COLOR_CAT.words.filter(w => !w.effect && wordVisible(w)), refresh));
+
+    const fxTitle = document.createElement("p");
+    fxTitle.className = "drawer-title";
+    fxTitle.textContent = "✨ 染髮效果（單選，可不選）";
+    panel.appendChild(fxTitle);
+    panel.appendChild(buildWordList(HAIR_COLOR_CAT.words.filter(w => w.effect && wordVisible(w)), refresh));
+
+    // 需要雙色的效果（漸層、雙色等）→ 挑第二色
+    if (fxWord && fxWord.two) {
+      const secondTitle = document.createElement("p");
+      secondTitle.className = "drawer-title";
+      secondTitle.textContent = `🎯 第二色（${fxWord.zh}）`;
+      panel.appendChild(secondTitle);
+      if (!base) {
+        const hint = document.createElement("p");
+        hint.className = "modal-sub";
+        hint.textContent = "先選基本髮色，才能挑第二色";
+        panel.appendChild(hint);
+      } else {
+        const secondList = document.createElement("div");
+        secondList.className = "word-list";
+        HAIR_COLOR_CAT.words
+          .filter(w => !w.effect && w.slug !== base && wordVisible(w))
+          .forEach(w => {
+            const btn = document.createElement("button");
+            btn.className = "word-btn" + (hairSecond === w.slug ? " active" : "");
+            btn.type = "button";
+            btn.textContent = w.zh;
+            btn.title = w.en;
+            btn.addEventListener("click", () => {
+              setHairSecond(hairSecond === w.slug ? "" : w.slug);
+              render();
+              renderHairModal();
+            });
+            secondList.appendChild(btn);
+          });
+        panel.appendChild(secondList);
+      }
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "modal-actions";
+    const done = document.createElement("button");
+    done.className = "btn btn-copy";
+    done.type = "button";
+    done.textContent = "完成 ✓";
+    done.addEventListener("click", closeHairModal);
+    actions.appendChild(done);
+    panel.appendChild(actions);
+
+    modalBackdrop.appendChild(panel);
+    renderCategoryState(); // 標記視窗內基本色/效果按鈕的選中狀態
   }
 
   function renderCategoryState() {
@@ -213,7 +360,8 @@
       badge.textContent = n;
       badge.classList.toggle("show", n > 0);
     });
-    document.querySelectorAll(".word-btn").forEach(btn => {
+    // 只處理有 data-slug 的按鈕（第二色按鈕的選中狀態由視窗自行標記）
+    document.querySelectorAll(".word-btn[data-slug]").forEach(btn => {
       btn.classList.toggle("active", selected.includes(btn.dataset.slug));
     });
   }
@@ -221,10 +369,24 @@
   /* ===== 選詞 / 取消 ===== */
   function toggleWord(slug) {
     const idx = selected.indexOf(slug);
-    if (idx >= 0) selected.splice(idx, 1);
-    else selected.push(slug);
+    const w = wordIndex[slug];
+    if (idx >= 0) {
+      selected.splice(idx, 1);
+    } else {
+      if (w.catSingle) {
+        // 單選分類：換選時自動移除同分類舊詞
+        selected = selected.filter(s => wordIndex[s].category !== w.category);
+      } else if (w.catDetail) {
+        // 髮色：基本色單選、效果也單選（各自替換）
+        selected = selected.filter(s => !(wordIndex[s].category === w.category && !wordIndex[s].effect === !w.effect));
+      }
+      selected.push(slug);
+    }
     saveSelection();
+    normalizeHairSecond();
     render();
+    // 選中髮型（長度/質地/瀏海/造型）時彈出髮色細節視窗
+    if (idx < 0 && HAIR_STRUCT_CATS.includes(w.category)) openHairModal();
   }
 
   function loadSelection() {
@@ -239,6 +401,7 @@
 
   /* ===== 畫面更新 ===== */
   function render() {
+    renderDrawer(); // 選詞會影響髮色細節區的展開/收起，重繪抽屜
     renderCategoryState();
 
     // 選中詞 chips（依 niji 7 順序排列、以分類色區分；性別 chip 排在人物詞最前）
@@ -274,6 +437,18 @@
       chipsEl.appendChild(chip);
     }
     charSlugs.forEach(addWordChip);
+    // 第二色 chip（點擊移除）
+    if (hairSecond) {
+      const w = wordIndex[hairSecond];
+      const chip = document.createElement("button");
+      chip.className = "chip";
+      chip.type = "button";
+      chip.title = "髮色第二色｜點擊移除";
+      chip.style.setProperty("--hue", HAIR_COLOR_CAT.hue);
+      chip.innerHTML = `第二色·${w.zh} <span class="x">×</span>`;
+      chip.addEventListener("click", () => { setHairSecond(""); render(); });
+      chipsEl.appendChild(chip);
+    }
     tailSlugs.forEach(addWordChip);
 
     // 提示詞字串（複製用純文字 + 預覽用分色顯示）
@@ -303,6 +478,27 @@
      缺任一部分就跳過；沒選性別時人物詞退回逗號並列。
      背景裝飾詞：逗號並列在最後（參考 niji 7 範例的擺放位置）。
      （注意：此處依分類名稱組句，若在 data.js 改分類名稱需同步修改） */
+  // 髮色組字：基本色 + 效果（+ 第二色）依模板合成一句；條件不足時退回逗號並列
+  function hairColorParts() {
+    const base = selectedHairBase(), fx = selectedHairFx();
+    const hue = HAIR_COLOR_CAT.hue;
+    const colorName = slug => wordIndex[slug].en.replace(/ hair$/, "");
+    if (fx) {
+      const fw = wordIndex[fx];
+      if (fw.two && fw.tpl && base && hairSecond) {
+        return [{ text: fw.tpl.replace("{a}", colorName(base)).replace("{b}", colorName(hairSecond)), hue }];
+      }
+      if (!fw.two && fw.tpl && base) {
+        return [{ text: fw.tpl.replace("{a}", colorName(base)), hue }];
+      }
+      const parts = [];
+      if (base) parts.push({ text: wordIndex[base].en, hue });
+      parts.push({ text: fw.en, hue });
+      return parts;
+    }
+    return base ? [{ text: wordIndex[base].en, hue }] : [];
+  }
+
   function buildPromptTokens(bigSlugs, charSlugs, tailSlugs, gender) {
     const tokens = []; // { text, hue?, isGender? }
     const word = slug => tokens.push({ text: wordIndex[slug].en, hue: wordIndex[slug].hue });
@@ -312,18 +508,35 @@
     bigSlugs.forEach((s, i) => { if (i) plain(", "); word(s); });
 
     if (!gender) {
-      charSlugs.forEach(s => { if (tokens.length) plain(", "); word(s); });
+      let colorDone = false;
+      charSlugs.forEach(s => {
+        if (wordIndex[s].catDetail) {
+          // 髮色詞改由 hairColorParts 統一組出（含第二色），只插入一次
+          if (!colorDone) {
+            hairColorParts().forEach(p => { if (tokens.length) plain(", "); tokens.push(p); });
+            colorDone = true;
+          }
+          return;
+        }
+        if (tokens.length) plain(", ");
+        word(s);
+      });
     } else {
       if (tokens.length) plain(", ");
       tokens.push({ text: gender.en, isGender: true });
 
       const HAIR_CATS = ["髮型長度", "髮質捲度", "瀏海", "髮型造型", "髮色", "臉部毛髮", "髮飾"];
-      const hairEyes = [...HAIR_CATS.flatMap(byCat), ...byCat("眼睛")];
-      if (hairEyes.length) {
+      const parts = [];
+      HAIR_CATS.forEach(c => {
+        if (c === "髮色") parts.push(...hairColorParts());
+        else byCat(c).forEach(s => parts.push({ text: wordIndex[s].en, hue: wordIndex[s].hue }));
+      });
+      byCat("眼睛").forEach(s => parts.push({ text: wordIndex[s].en, hue: wordIndex[s].hue }));
+      if (parts.length) {
         plain(" with ");
-        hairEyes.forEach((s, i) => {
-          if (i) plain(i === hairEyes.length - 1 ? " and " : ", ");
-          word(s);
+        parts.forEach((p, i) => {
+          if (i) plain(i === parts.length - 1 ? " and " : ", ");
+          tokens.push(p);
         });
       }
       byCat("氣質特質").forEach(s => { plain(", "); word(s); });
@@ -515,9 +728,10 @@
   });
 
   clearBtn.addEventListener("click", () => {
-    if (!selected.length && !selectedGender) return;
+    if (!selected.length && !selectedGender && !hairSecond) return;
     selected = [];
     setGender("");
+    setHairSecond("");
     saveSelection();
     render();
     showToast("已清空");

@@ -21,17 +21,14 @@ const PROMPT_DATA = [
     icon: "🎨",
     hue: 265,
     words: [
-      { zh: "賽璐璐動畫", en: "cel shading anime style", slug: "cel-shading" },
       { zh: "厚塗", en: "impasto painting style", slug: "impasto" },
       { zh: "水彩", en: "watercolor style", slug: "watercolor" },
-      { zh: "吉卜力風", en: "ghibli inspired style", slug: "ghibli" },
-      { zh: "90年代復古動畫", en: "90s retro anime style", slug: "retro-90s" },
       { zh: "扁平插畫", en: "flat illustration", slug: "flat-illust" },
-      { zh: "像素風", en: "pixel art style", slug: "pixel-art" },
-      { zh: "黑白漫畫", en: "black and white manga style", slug: "manga-bw" },
       { zh: "半寫實", en: "semi-realistic style", slug: "semi-realistic" },
+      { zh: "半寫實寫真插畫", en: "semi-realistic portrait illustration", slug: "semi-realistic-portrait" },
       { zh: "奇幻油畫", en: "exquisite fantasy oil painting", slug: "fantasy-oil-painting" },
-      { zh: "半寫實人像照", en: "half-realistic lady photo", slug: "half-realistic-photo" }
+      { zh: "Y2K風", en: "Y2K aesthetic", slug: "y2k" },
+      { zh: "絕佳傑作", en: "masterpiece", slug: "masterpiece" }
     ]
   },
   {
@@ -48,7 +45,10 @@ const PROMPT_DATA = [
       { zh: "動態構圖", en: "dynamic composition", slug: "dynamic-comp" },
       { zh: "廣角景深", en: "wide angle depth of field", slug: "wide-angle" },
       { zh: "半身", en: "half body shot", slug: "half-body" },
-      { zh: "正面", en: "front face", slug: "front-face" }
+      { zh: "正面", en: "front face", slug: "front-face" },
+      { zh: "側身看鏡頭", en: "side profile looking at viewer", slug: "side-look-viewer" },
+      { zh: "上半身照", en: "upper body shot", slug: "upper-body" },
+      { zh: "中景鏡頭", en: "medium shot", slug: "medium-shot" }
     ]
   },
   {
@@ -67,7 +67,11 @@ const PROMPT_DATA = [
       { zh: "魔幻夢境", en: "magical and dreamy atmosphere", slug: "magical-dreamy" },
       { zh: "柔和色調", en: "soft tones", slug: "soft-tones" },
       { zh: "恬靜溫柔", en: "gentle and tranquil mood", slug: "tranquil-mood" },
-      { zh: "靜謐神聖", en: "quiet and sacred feeling", slug: "sacred-feeling" }
+      { zh: "靜謐神聖", en: "quiet and sacred feeling", slug: "sacred-feeling" },
+      { zh: "朝氣活潑用色", en: "cheerful vibrant colors", slug: "cheerful-colors" },
+      { zh: "美式復古餐廳", en: "retro American diner color palette", slug: "diner-palette" },
+      { zh: "淡彩", en: "pale color palette", slug: "pale-tones" },
+      { zh: "高鮮明度", en: "highly vivid colors", slug: "high-vivid" }
     ]
   },
   {
@@ -104,11 +108,14 @@ const PROMPT_DATA = [
   },
   /* ========== 人物小方向 ========== */
   // 髮型六分類，依 niji 建議寫作順序：長度 → 質地 → 瀏海 → 造型 → 顏色 → 髮飾
+  // single: true = 該分類單選（重選自動替換）
+  // detail: true = 不顯示分類格子，改在髮型細節區選（髮色）；effect: true = 細節區的「效果」複選詞
   {
     category: "髮型長度",
     group: "人物小方向",
     icon: "📏",
     hue: 20,
+    single: true,
     words: [
       { zh: "光頭", en: "bald", slug: "bald" },
       { zh: "平頭", en: "buzz cut", slug: "buzz-cut", gender: "m" },
@@ -136,6 +143,7 @@ const PROMPT_DATA = [
     group: "人物小方向",
     icon: "🌀",
     hue: 50,
+    single: true,
     words: [
       { zh: "直髮", en: "straight hair", slug: "straight-hair" },
       { zh: "微捲", en: "wavy hair", slug: "wavy-hair" },
@@ -164,6 +172,7 @@ const PROMPT_DATA = [
     group: "人物小方向",
     icon: "✂️",
     hue: 70,
+    single: true,
     words: [
       { zh: "無瀏海", en: "no bangs", slug: "no-bangs" },
       { zh: "全往後梳", en: "swept-back hair", slug: "swept-back", gender: "m" },
@@ -182,6 +191,7 @@ const PROMPT_DATA = [
       { zh: "中分", en: "center parted hair", slug: "center-part" },
       { zh: "旁分", en: "side part", slug: "side-part" },
       { zh: "三七分", en: "deep side part", slug: "deep-side-part" },
+      { zh: "逗號瀏海", en: "comma bangs", slug: "comma-bangs", gender: "m" },
       { zh: "呆毛", en: "ahoge", slug: "ahoge" }
     ]
   },
@@ -190,6 +200,7 @@ const PROMPT_DATA = [
     group: "人物小方向",
     icon: "💇",
     hue: 330,
+    single: true,
     words: [
       { zh: "馬尾", en: "ponytail", slug: "ponytail" },
       { zh: "高馬尾", en: "high ponytail", slug: "high-ponytail", gender: "f" },
@@ -238,7 +249,18 @@ const PROMPT_DATA = [
       { zh: "髒辮", en: "dreadlocks", slug: "dreadlocks", gender: "m" },
       { zh: "玉米辮", en: "cornrows", slug: "cornrows", gender: "m" },
       { zh: "綁髻", en: "topknot", slug: "topknot", gender: "m" },
-      { zh: "武士頭", en: "samurai topknot", slug: "samurai-topknot", gender: "m" }
+      { zh: "武士頭", en: "samurai topknot", slug: "samurai-topknot", gender: "m" },
+      { zh: "鑽頭捲", en: "drill hair", slug: "drill-hair", gender: "f" },
+      { zh: "雙鑽頭捲", en: "twin drills", slug: "twin-drills", gender: "f" },
+      { zh: "公主捲", en: "princess curls", slug: "princess-curls", gender: "f" },
+      { zh: "高雙馬尾", en: "high twintails", slug: "high-twintails", gender: "f" },
+      { zh: "短雙馬尾", en: "short twintails", slug: "short-twintails", gender: "f" },
+      { zh: "單側綁髮", en: "one side up hairstyle", slug: "one-side-up", gender: "f" },
+      { zh: "雙側綁髮", en: "two side up hairstyle", slug: "two-side-up", gender: "f" },
+      { zh: "辮子馬尾", en: "braided ponytail", slug: "braided-ponytail" },
+      { zh: "辮子丸子頭", en: "braided bun", slug: "braided-bun", gender: "f" },
+      { zh: "摺疊馬尾", en: "folded ponytail", slug: "folded-ponytail", gender: "f" },
+      { zh: "低綁長髮", en: "low-tied long hair", slug: "low-tied-long-hair" }
     ]
   },
   {
@@ -246,6 +268,7 @@ const PROMPT_DATA = [
     group: "人物小方向",
     icon: "🖌️",
     hue: 260,
+    detail: true,
     words: [
       { zh: "黑髮", en: "black hair", slug: "black-hair" },
       { zh: "深棕", en: "dark brown hair", slug: "dark-brown-hair" },
@@ -260,14 +283,16 @@ const PROMPT_DATA = [
       { zh: "紫髮", en: "purple hair", slug: "purple-hair" },
       { zh: "藍髮", en: "blue hair", slug: "blue-hair" },
       { zh: "綠髮", en: "green hair", slug: "green-hair" },
-      { zh: "漸層", en: "gradient hair", slug: "gradient-hair" },
-      { zh: "挑染", en: "highlights", slug: "hair-highlights" },
-      { zh: "內層染", en: "underlights", slug: "underlights", gender: "f" },
-      { zh: "雙色", en: "split-dye hair", slug: "split-dye" },
-      { zh: "髮尾漸淡", en: "ombre hair", slug: "ombre-hair" },
-      { zh: "髮梢挑色", en: "colored tips", slug: "colored-tips", gender: "f" },
-      { zh: "髮根深色", en: "dark roots", slug: "dark-roots", gender: "m" },
-      { zh: "灰白夾雜", en: "salt and pepper hair", slug: "salt-and-pepper", gender: "m" }
+      { zh: "亮紅髮", en: "bright red hair", slug: "bright-red-hair" },
+      // effect: 染髮效果（單選）。two: 需要第二色；tpl: 組句模板，{a}=基本色、{b}=第二色（顏色名不含 hair）
+      { zh: "漸層", en: "gradient hair", slug: "gradient-hair", effect: true, two: true, tpl: "{a} to {b} gradient hair" },
+      { zh: "挑染", en: "highlights", slug: "hair-highlights", effect: true, two: true, tpl: "{a} hair with {b} highlights" },
+      { zh: "內層染", en: "underlights", slug: "underlights", gender: "f", effect: true, two: true, tpl: "{a} hair with {b} underlights" },
+      { zh: "雙色", en: "split-dye hair", slug: "split-dye", effect: true, two: true, tpl: "{a} and {b} split-dye hair" },
+      { zh: "髮尾漸淡", en: "ombre hair", slug: "ombre-hair", effect: true, two: true, tpl: "{a} to {b} ombre hair" },
+      { zh: "髮梢挑色", en: "colored tips", slug: "colored-tips", gender: "f", effect: true, two: true, tpl: "{a} hair with {b} tips" },
+      { zh: "髮根深色", en: "dark roots", slug: "dark-roots", gender: "m", effect: true, tpl: "{a} hair with dark roots" },
+      { zh: "灰白夾雜", en: "salt and pepper hair", slug: "salt-and-pepper", gender: "m", effect: true }
     ]
   },
   {
@@ -292,6 +317,7 @@ const PROMPT_DATA = [
     group: "人物小方向",
     icon: "🎀",
     hue: 200,
+    single: true,
     words: [
       { zh: "髮帶", en: "headband", slug: "headband" },
       { zh: "蕾絲髮帶", en: "lace headband", slug: "lace-headband", gender: "f" },
@@ -335,7 +361,9 @@ const PROMPT_DATA = [
     words: [
       { zh: "成熟優雅", en: "mature and graceful aura", slug: "mature-graceful" },
       { zh: "五官勻稱", en: "evenly balanced facial features", slug: "balanced-features" },
-      { zh: "細緻曲線", en: "delicate curves", slug: "delicate-curves" }
+      { zh: "細緻曲線", en: "delicate curves", slug: "delicate-curves" },
+      { zh: "纖細身材", en: "slender figure", slug: "slender-figure" },
+      { zh: "元氣桃色妝", en: "fresh peachy makeup", slug: "peachy-makeup", gender: "f" }
     ]
   },
   {
@@ -370,7 +398,9 @@ const PROMPT_DATA = [
       { zh: "休閒連帽衫", en: "casual hoodie", slug: "hoodie" },
       { zh: "禮服", en: "elegant evening gown", slug: "evening-gown" },
       { zh: "公主服", en: "princess dress", slug: "princess-dress" },
-      { zh: "蕾絲白睡衣", en: "puffy pure white pajama with sleeves and edges decorated with lace", slug: "white-lace-pajama" }
+      { zh: "蕾絲白睡衣", en: "puffy pure white pajama with sleeves and edges decorated with lace", slug: "white-lace-pajama" },
+      { zh: "紅色奶油花邊洋裝", en: "red whipped-cream frill dress with soft sheen", slug: "cream-frill-dress", gender: "f" },
+      { zh: "奶油蕾絲波浪袖", en: "creamy lace wavy sleeves", slug: "cream-lace-sleeves", gender: "f" }
     ]
   },
   {
@@ -387,7 +417,8 @@ const PROMPT_DATA = [
       { zh: "持劍戰鬥", en: "sword fighting stance", slug: "sword-stance" },
       { zh: "跳躍", en: "jumping mid-air", slug: "jumping" },
       { zh: "坐在窗台", en: "sitting by the window", slug: "sitting-window" },
-      { zh: "手捧魔法書", en: "holding a magic book in her hands", slug: "holding-book" }
+      { zh: "手捧魔法書", en: "holding a magic book in her hands", slug: "holding-book" },
+      { zh: "柔軟動作", en: "soft graceful pose", slug: "soft-pose" }
     ]
   },
   {
@@ -397,7 +428,9 @@ const PROMPT_DATA = [
     hue: 120,
     words: [
       { zh: "日月飾球", en: "a sun and a moon decorative orb surrounding by her side, orbs emitting a soft orange glow", slug: "sun-moon-orbs" },
-      { zh: "魔法古書", en: "the book cover made of brown leather with four golden corners is opened and resting in her hands", slug: "magic-book" }
+      { zh: "魔法古書", en: "the book cover made of brown leather with four golden corners is opened and resting in her hands", slug: "magic-book" },
+      { zh: "頭頂奶油櫻桃", en: "a swirl of white whipped cream topped with a cherry on her head", slug: "cream-cherry-head", gender: "f" },
+      { zh: "沾到鮮奶油", en: "dabs of whipped cream on the nose and shoulders", slug: "cream-dabs" }
     ]
   },
   /* ========== 背景裝飾（輸出時排在最後） ========== */
@@ -411,6 +444,17 @@ const PROMPT_DATA = [
       { zh: "金色巴洛克邊框", en: "golden Baroque ornament border", slug: "baroque-border" },
       { zh: "星空石雕", en: "mystique of starry stone carvings", slug: "starry-stone-carving" },
       { zh: "天空石雕背景", en: "a sky stone-carved background", slug: "sky-stone-background" }
+    ]
+  },
+  {
+    category: "主題甜點",
+    group: "背景裝飾",
+    icon: "🍨",
+    hue: 55,
+    words: [
+      { zh: "霧面球狀冰淇淋", en: "plump matte ice cream scoops with soft texture", slug: "matte-ice-cream" },
+      { zh: "蜂蜜銀珠黃冰淇淋", en: "yellow ice cream topped with silver pearls and honey drizzle", slug: "yellow-honey-ice-cream" },
+      { zh: "黑白夾心餅乾", en: "black sandwich cookies with white cream filling", slug: "sandwich-cookies" }
     ]
   }
 ];
