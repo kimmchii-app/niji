@@ -97,6 +97,25 @@ body {
 }
 .theme-toggle:hover { filter: brightness(0.94); }
 
+/* 使用說明「？」按鈕（header 左側，與主題鈕對稱） */
+.help-toggle {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid var(--panel-border);
+  background: var(--panel-soft);
+  color: var(--accent-strong);
+  border-radius: 999px;
+  width: 40px;
+  height: 40px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+.help-toggle:hover { filter: brightness(0.94); }
+
 /* ===== 選中詞的顯示區 ===== */
 .selected-area {
   border: 1px solid var(--panel-border);
@@ -290,7 +309,7 @@ body {
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
 }
-/* 性別選擇（人物小方向開頭） */
+/* 性別選擇（角色設定開頭） */
 .gender-row {
   display: flex;
   gap: 6px;
@@ -458,6 +477,20 @@ body {
 .hair-modal .drawer-title:first-child { margin-top: 0; }
 .modal-sub { color: var(--text-dim); font-size: 0.82rem; margin-bottom: 4px; }
 .modal-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
+
+/* 使用說明彈窗內容 */
+.help-modal { width: min(560px, 100%); font-size: 0.9rem; line-height: 1.65; }
+.help-modal h2 { font-size: 1.05rem; color: var(--accent-strong); margin-bottom: 6px; }
+.help-modal h3 { font-size: 0.92rem; color: var(--accent-strong); margin: 14px 0 6px; }
+.help-modal h3 small { color: var(--text-dim); font-weight: 400; font-size: 0.78rem; }
+.help-modal ul, .help-modal ol { padding-left: 1.5em; display: flex; flex-direction: column; gap: 4px; }
+.help-modal code {
+  background: var(--code-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.82em;
+}
 .word-btn {
   border: 1px solid var(--word-border);
   background: var(--word-bg);
@@ -470,6 +503,7 @@ body {
   touch-action: manipulation;
 }
 .word-btn:hover { background: var(--word-hover); }
+.word-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .word-btn.active {
   background: var(--accent-strong);
   border-color: var(--accent-strong);

@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#1a2733">
 <title>Niji 提示詞配搭工具</title>
-<link rel="stylesheet" href="css/style.css?v=20260716r">
+<link rel="stylesheet" href="css/style.css?v=20260716u">
 </head>
 <body>
 
 <header class="app-header">
+  <button class="help-toggle" id="helpToggle" title="使用說明">？</button>
   <h1>Niji 提示詞配搭工具</h1>
   <button class="theme-toggle" id="themeToggle" title="切換深淺色主題">🌙</button>
 </header>
@@ -56,10 +57,50 @@
 
 </main>
 
+<!-- 使用說明彈窗 -->
+<div class="modal-backdrop" id="helpModal" hidden>
+  <div class="hair-modal help-modal">
+    <h2>🌈 歡迎來到 Niji 提示詞配搭工具！</h2>
+    <p>這裡是 niji 7 的題詞小幫手，只要選好中文標籤就可以請 niji 幫你生成照片！</p>
+
+    <h3>🚀 三步驟上手</h3>
+    <ol>
+      <li><b>點選詞彙</b> — 從下方分類挑喜歡的（畫風、場景、髮型⋯⋯隨你混搭）</li>
+      <li><b>按「📋 複製」</b> — 組好的英文提示詞一鍵入袋</li>
+      <li><b>貼到 niji 上面就可以生成！</b></li>
+    </ol>
+
+    <h3>🗂 三大分頁 <small>（所有選項不一定是必選，也可以選填）</small></h3>
+    <ul>
+      <li>🎨 <b>畫面設定</b>：畫風、構圖、色調、光影、場景 — 決定整張圖的氣氛</li>
+      <li>👤 <b>角色設定</b>：先選 👩 女性 / 👨 男性，詞庫會自動切換成對應性別（通用詞兩邊都看得到）</li>
+      <li>🏛 <b>背景裝飾</b>：巴洛克邊框、主題甜點等收尾點綴</li>
+    </ul>
+
+    <h3>💇 髮型這樣玩</h3>
+    <ul>
+      <li>髮型類（長度／髮質／瀏海／造型／髮飾）都是<b>單選</b>，重選自動替換，不怕互相打架</li>
+      <li>選擇髮型長度時會跳出 🎨 <b>髮色視窗</b>；選擇髮質捲度、瀏海或造型則不會打斷操作。挑基本色 → 想要漸層或雙色？再挑一個第二色，工具會自動寫成 <code>pink to blue gradient hair</code> 這種漂亮句子！</li>
+      <li>想反悔？髮型抽屜底部的「🎨 髮色細節」按鈕隨時重開</li>
+    </ul>
+
+    <h3>✨ 小撇步</h3>
+    <ul>
+      <li>上方的彩色小膠囊點一下 ＝ 移除那個詞</li>
+      <li>🗑 清空一鍵重來；🌙／☀️ 切換深淺色</li>
+      <li>你的選擇會自動記住，關掉網頁再開也還在！</li>
+    </ul>
+
+    <div class="modal-actions">
+      <button class="btn btn-copy" id="helpClose" type="button">開始使用 ✨</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-<script src="js/data.js?v=20260716r"></script>
+<script src="js/data.js?v=20260716u"></script>
 <script src="js/image-index.js?v=20260716r"></script>
-<script src="js/app.js?v=20260716r"></script>
+<script src="js/app.js?v=20260716w"></script>
 </body>
 </html>
