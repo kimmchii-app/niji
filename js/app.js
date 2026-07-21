@@ -67,6 +67,10 @@
   let selectedProfiles = loadSelectedProfiles();
   let favoriteProfiles = loadArrayKey(FAVORITE_PROFILES_KEY);
   let pinnedProfiles = loadArrayKey(PINNED_PROFILES_KEY);
+  // Profile 篩選/搜尋（僅存於記憶體，不持久化）
+  let profileSearchOpen = false;
+  let profileSearchQuery = "";
+  let profileFavFilter = false;
 
   function normalizeProfileCode(value) {
     return value.replace(/^\s*--(?:profile|p)\s+/i, "").replace(/\s+/g, " ").trim();
@@ -383,10 +387,52 @@
       });
       panel.appendChild(form);
 
+      const toolbar = document.createElement("div");
+      toolbar.className = "profile-toolbar";
       const hint = document.createElement("p");
       hint.className = "profile-hint";
       hint.textContent = "可複選代碼套用；★ 收藏、📌 置頂；預設代碼不可刪除";
-      panel.appendChild(hint);
+      const searchToggle = document.createElement("button");
+      searchToggle.className = "profile-search-toggle";
+      searchToggle.type = "button";
+      searchToggle.classList.toggle("active", profileSearchOpen);
+      searchToggle.textContent = "🔍";
+      searchToggle.title = "篩選 / 搜尋 Profile";
+      searchToggle.setAttribute("aria-label", "篩選或搜尋 Profile");
+      searchToggle.addEventListener("click", () => {
+        profileSearchOpen = !profileSearchOpen;
+        renderMainPanel();
+      });
+      toolbar.append(hint, searchToggle);
+      panel.appendChild(toolbar);
+
+      const searchPanel = document.createElement("div");
+      searchPanel.className = "profile-search-panel";
+      searchPanel.hidden = !profileSearchOpen;
+      const searchInput = document.createElement("input");
+      searchInput.className = "profile-search-input";
+      searchInput.type = "text";
+      searchInput.placeholder = "模糊搜尋 Profile 名稱";
+      searchInput.setAttribute("aria-label", "搜尋 Profile 名稱");
+      searchInput.value = profileSearchQuery;
+      searchInput.addEventListener("input", () => {
+        profileSearchQuery = searchInput.value;
+        applyProfileFilter();
+      });
+      const favFilter = document.createElement("button");
+      favFilter.className = "profile-fav-filter";
+      favFilter.type = "button";
+      favFilter.classList.toggle("active", profileFavFilter);
+      favFilter.textContent = "★ 只看收藏";
+      favFilter.title = "只顯示已收藏的 Profile";
+      favFilter.addEventListener("click", () => {
+        profileFavFilter = !profileFavFilter;
+        favFilter.classList.toggle("active", profileFavFilter);
+        applyProfileFilter();
+      });
+      searchPanel.append(searchInput, favFilter);
+      panel.appendChild(searchPanel);
+      if (profileSearchOpen) setTimeout(() => searchInput.focus(), 0);
 
       // 📌 置頂的代碼浮到所屬區段頂端，段內維持原順序
       const sortSection = codes => {
@@ -404,6 +450,9 @@
       const buildCodeRow = (code, isDefault) => {
         const row = document.createElement("div");
         row.className = "profile-code-row";
+        row.classList.toggle("is-default", isDefault);
+        row.dataset.code = code;
+        row.dataset.fav = favoriteProfiles.includes(code) ? "true" : "false";
 
         const choose = document.createElement("button");
         choose.className = "profile-code-btn";
@@ -445,12 +494,7 @@
 
         row.append(choose, fav, pin);
 
-        if (isDefault) {
-          const tag = document.createElement("span");
-          tag.className = "profile-default-tag";
-          tag.textContent = "預設";
-          row.appendChild(tag);
-        } else {
+        if (!isDefault) {
           const remove = document.createElement("button");
           remove.className = "profile-delete-btn";
           remove.type = "button";
@@ -475,6 +519,27 @@
       sortSection(DEFAULTS).forEach(code => list.appendChild(buildCodeRow(code, true)));
       sortSection(profileCodes).forEach(code => list.appendChild(buildCodeRow(code, false)));
       panel.appendChild(list);
+
+      const emptyMsg = document.createElement("p");
+      emptyMsg.className = "profile-empty-msg";
+      emptyMsg.textContent = "沒有符合條件的 Profile";
+      emptyMsg.hidden = true;
+      panel.appendChild(emptyMsg);
+
+      // 依搜尋字串與「只看收藏」切換各列顯示（不重建 DOM，保留輸入焦點）
+      function applyProfileFilter() {
+        const q = profileSearchQuery.trim().toLowerCase();
+        let shown = 0;
+        list.querySelectorAll(".profile-code-row").forEach(row => {
+          const matchFav = !profileFavFilter || row.dataset.fav === "true";
+          const matchText = !q || row.dataset.code.toLowerCase().includes(q);
+          const visible = matchFav && matchText;
+          row.style.display = visible ? "" : "none";
+          if (visible) shown += 1;
+        });
+        emptyMsg.hidden = shown > 0;
+      }
+      applyProfileFilter();
     }
 
     renderMainPanel = () => {

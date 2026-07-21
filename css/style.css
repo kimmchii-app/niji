@@ -895,17 +895,74 @@ body {
   border-color: var(--profile);
   background: var(--profile-soft);
 }
-.profile-default-tag {
+.profile-code-row.is-default {   /* 系統預設：上底色 */
+  background: #e49d23;
+  padding: 4px 5px;
+  border-radius: 11px;
+  align-items: center;
+}
+.profile-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 4px 2px 8px;
+}
+.profile-toolbar .profile-hint {
+  margin: 0;
+}
+.profile-search-toggle {
   flex: 0 0 auto;
-  align-self: center;
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--profile);
+  border: 1px solid var(--word-border);
+  border-radius: 9px;
+  background: var(--word-bg);
+  color: var(--text);
+  padding: 6px 10px;
+  cursor: pointer;
+  line-height: 1;
+}
+.profile-search-toggle.active {
+  border-color: var(--profile);
   background: var(--profile-soft);
-  border: 1px solid var(--profile);
+}
+.profile-search-panel {
+  display: flex;
+  gap: 6px;
+  margin: 0 2px 8px;
+}
+.profile-search-panel[hidden] {
+  display: none;
+}
+.profile-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid var(--word-border);
+  border-radius: 9px;
+  background: var(--word-bg);
+  color: var(--text);
+  padding: 8px 10px;
+}
+.profile-fav-filter {
+  flex: 0 0 auto;
+  border: 1px solid var(--word-border);
+  border-radius: 9px;
+  background: var(--word-bg);
+  color: var(--text);
+  padding: 8px 12px;
+  cursor: pointer;
   white-space: nowrap;
+}
+.profile-fav-filter.active {
+  color: #e8b420;
+  border-color: #e8b420;
+}
+.profile-empty-msg {
+  margin: 2px;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+.profile-empty-msg[hidden] {
+  display: none;
 }
 
 /* ===== 手機版（直向堆疊）===== */
