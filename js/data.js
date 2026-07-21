@@ -8,6 +8,9 @@
 // 分類本身也可標 gender（如「臉部毛髮」），性別不符時整格隱藏。
 // en 內可用 {poss} 代名詞佔位符：組句時依性別自動填入 her/his，未選性別時填 their。
 
+// 系統預設 Profile 代碼（內建、不可刪除，永遠顯示於清單最上方）
+const DEFAULT_PROFILE_CODES = ["5gl4zk5", "o54hkwn"];
+
 // 性別（人物描述的開頭詞，單選）
 const GENDERS = [
   { zh: "女性", en: "1girl", key: "female", icon: "👩" },

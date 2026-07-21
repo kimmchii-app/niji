@@ -7,8 +7,10 @@ window.IMAGE_FILES = [
   "images/_impasto_painting_style_exquisite_fantasy_oil_painting_half-r_561bd25d-88ae-4622-a1f3-554864d848d6_0.png",
   "images/_impasto_painting_style_semi-realistic_style_exquisite_fantas_78cc9927-7dc7-4928-92fe-bf55a79ae9fa_1.png",
   "images/_semi-realistic_style_full_body_shot_half_body_shot_muted_des_1537bf38-48fd-480a-b1e3-3da01410bc12_3.png",
+  "images/1boy with textured crop, fluffy hair, choppy bangs, side part with fade, ash brown hair and bandana, gentle smile, wearing beige school uniform, sitting pose.png",
   "images/impasto painting style, exquisite fantasy oil painting, half-realistic lady photo, 1boy with high and tight, medium-short hair, styled with wax, floating hair, choppy bangs, black hair and blue eyes, wearing wizard robe, g.png",
   "images/medium-length hair, straight hair, layered hair, side-swept bangs, ahoge, dutch braid, black hair, blue hair, gradient hair, blue starry eyes, gentle smile, sailor school uniform, the book cover made of brown leather with .png",
+  "images/semi-realistic portrait illustration, vintage oil painting style, full body shot, gentle and tranquil mood, soft diffused light, street, 1girl with long hair, blunt bangs, double buns, black to blue gradient hair.png",
   "images/semi-realistic portrait illustration, Y2K aesthetic, upper body shot, pastel color palette, cheerful vibrant colors, classroom, 1girl with bob cut and black and orange split-dye hair.png",
   "images/semi-realistic style, half body shot, muted desaturated tones, golden hour lighting, cherry blossom street, 1girl with hip-length hair, wavy hair, hime cut sidelocks, double buns, black hair, pink hair, highlights and mini.png",
   "images/semi-realistic style, half body shot, soft diffused light, classroom, 1boy with medium-short hair, wavy hair, hair covering one eye and dark brown hair with dark roots, gentle smile, reaching out hand.png"
