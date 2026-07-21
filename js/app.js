@@ -56,26 +56,62 @@
 
   const PROFILE_CODES_KEY = "niji-profile-codes";
   const SELECTED_PROFILE_KEY = "niji-selected-profile";
+  const SELECTED_PROFILES_KEY = "niji-selected-profiles";
+  const FAVORITE_PROFILES_KEY = "niji-favorite-profiles";
+  const PINNED_PROFILES_KEY = "niji-pinned-profiles";
+  const DEFAULTS = Array.isArray(typeof DEFAULT_PROFILE_CODES !== "undefined" ? DEFAULT_PROFILE_CODES : null)
+    ? DEFAULT_PROFILE_CODES : [];
+  const isDefaultCode = c => DEFAULTS.includes(c);
   let profileCodes = loadProfileCodes();
-  let selectedProfile = localStorage.getItem(SELECTED_PROFILE_KEY) || "";
-  if (!profileCodes.includes(selectedProfile)) selectedProfile = "";
+  const isKnownCode = c => isDefaultCode(c) || profileCodes.includes(c);
+  let selectedProfiles = loadSelectedProfiles();
+  let favoriteProfiles = loadArrayKey(FAVORITE_PROFILES_KEY);
+  let pinnedProfiles = loadArrayKey(PINNED_PROFILES_KEY);
 
   function normalizeProfileCode(value) {
-    return value.replace(/^\s*--p\s+/i, "").replace(/\s+/g, " ").trim();
+    return value.replace(/^\s*--(?:profile|p)\s+/i, "").replace(/\s+/g, " ").trim();
+  }
+
+  // 移除字串中任何位置的 --profile / --p 旗標，再以空白拆成多組乾淨代碼
+  function parseProfileInput(value) {
+    return String(value)
+      .replace(/--(?:profile|p)\b/gi, " ")
+      .split(/\s+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+
+  function loadArrayKey(key) {
+    try {
+      const raw = JSON.parse(localStorage.getItem(key) || "[]");
+      return Array.isArray(raw) ? raw.filter(c => typeof c === "string") : [];
+    } catch { return []; }
   }
 
   function loadProfileCodes() {
     try {
       const raw = JSON.parse(localStorage.getItem(PROFILE_CODES_KEY) || "[]");
       return Array.isArray(raw)
-        ? [...new Set(raw.filter(code => typeof code === "string").map(normalizeProfileCode).filter(Boolean))]
+        ? [...new Set(raw.filter(code => typeof code === "string").flatMap(parseProfileInput))]
+            .filter(code => !isDefaultCode(code))
         : [];
     } catch { return []; }
   }
 
+  function loadSelectedProfiles() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(SELECTED_PROFILES_KEY) || "null");
+      if (Array.isArray(raw)) return raw.filter(isKnownCode);
+    } catch { /* fall through to legacy migration */ }
+    const legacy = localStorage.getItem(SELECTED_PROFILE_KEY) || "";
+    return isKnownCode(legacy) ? [legacy] : [];
+  }
+
   function saveProfiles() {
     localStorage.setItem(PROFILE_CODES_KEY, JSON.stringify(profileCodes));
-    localStorage.setItem(SELECTED_PROFILE_KEY, selectedProfile);
+    localStorage.setItem(SELECTED_PROFILES_KEY, JSON.stringify(selectedProfiles));
+    localStorage.setItem(FAVORITE_PROFILES_KEY, JSON.stringify(favoriteProfiles));
+    localStorage.setItem(PINNED_PROFILES_KEY, JSON.stringify(pinnedProfiles));
   }
 
   function loadLegacyCustomAnchor() {
@@ -335,10 +371,12 @@
       form.append(input, add);
       form.addEventListener("submit", e => {
         e.preventDefault();
-        const code = normalizeProfileCode(input.value);
-        if (!code) { showToast("請輸入 Profile 代碼"); return; }
-        if (!profileCodes.includes(code)) profileCodes.push(code);
-        selectedProfile = code;
+        const codes = parseProfileInput(input.value);
+        if (!codes.length) { showToast("請輸入 Profile 代碼"); return; }
+        codes.forEach(code => {
+          if (!isDefaultCode(code) && !profileCodes.includes(code)) profileCodes.push(code);
+          if (!selectedProfiles.includes(code)) selectedProfiles.push(code);
+        });
         saveProfiles();
         renderMainPanel();
         render();
@@ -347,42 +385,95 @@
 
       const hint = document.createElement("p");
       hint.className = "profile-hint";
-      hint.textContent = profileCodes.length
-        ? "點選一組代碼套用；再次點擊可取消"
-        : "尚未建立代碼，請先在上方新增";
+      hint.textContent = "可複選代碼套用；★ 收藏、📌 置頂；預設代碼不可刪除";
       panel.appendChild(hint);
 
-      const list = document.createElement("div");
-      list.className = "profile-code-list";
-      profileCodes.forEach(code => {
+      // 📌 置頂的代碼浮到所屬區段頂端，段內維持原順序
+      const sortSection = codes => {
+        const pinned = codes.filter(c => pinnedProfiles.includes(c));
+        const rest = codes.filter(c => !pinnedProfiles.includes(c));
+        return [...pinned, ...rest];
+      };
+
+      const toggleMembership = (arr, code) => {
+        const i = arr.indexOf(code);
+        if (i >= 0) arr.splice(i, 1);
+        else arr.push(code);
+      };
+
+      const buildCodeRow = (code, isDefault) => {
         const row = document.createElement("div");
         row.className = "profile-code-row";
+
         const choose = document.createElement("button");
         choose.className = "profile-code-btn";
         choose.type = "button";
-        choose.classList.toggle("active", selectedProfile === code);
+        choose.classList.toggle("active", selectedProfiles.includes(code));
         choose.textContent = `--p ${code}`;
         choose.addEventListener("click", () => {
-          selectedProfile = selectedProfile === code ? "" : code;
+          toggleMembership(selectedProfiles, code);
           saveProfiles();
           renderMainPanel();
           render();
         });
-        const remove = document.createElement("button");
-        remove.className = "profile-delete-btn";
-        remove.type = "button";
-        remove.title = `刪除 ${code}`;
-        remove.textContent = "×";
-        remove.addEventListener("click", () => {
-          profileCodes = profileCodes.filter(item => item !== code);
-          if (selectedProfile === code) selectedProfile = "";
+
+        const fav = document.createElement("button");
+        fav.className = "profile-fav-btn";
+        fav.type = "button";
+        const isFav = favoriteProfiles.includes(code);
+        fav.classList.toggle("active", isFav);
+        fav.textContent = isFav ? "★" : "☆";
+        fav.title = isFav ? `取消收藏 ${code}` : `收藏 ${code}`;
+        fav.addEventListener("click", () => {
+          toggleMembership(favoriteProfiles, code);
           saveProfiles();
           renderMainPanel();
-          render();
         });
-        row.append(choose, remove);
-        list.appendChild(row);
-      });
+
+        const pin = document.createElement("button");
+        pin.className = "profile-pin-btn";
+        pin.type = "button";
+        const isPinned = pinnedProfiles.includes(code);
+        pin.classList.toggle("active", isPinned);
+        pin.textContent = "📌";
+        pin.title = isPinned ? `取消置頂 ${code}` : `置頂 ${code}`;
+        pin.addEventListener("click", () => {
+          toggleMembership(pinnedProfiles, code);
+          saveProfiles();
+          renderMainPanel();
+        });
+
+        row.append(choose, fav, pin);
+
+        if (isDefault) {
+          const tag = document.createElement("span");
+          tag.className = "profile-default-tag";
+          tag.textContent = "預設";
+          row.appendChild(tag);
+        } else {
+          const remove = document.createElement("button");
+          remove.className = "profile-delete-btn";
+          remove.type = "button";
+          remove.title = `刪除 ${code}`;
+          remove.textContent = "×";
+          remove.addEventListener("click", () => {
+            profileCodes = profileCodes.filter(item => item !== code);
+            selectedProfiles = selectedProfiles.filter(item => item !== code);
+            favoriteProfiles = favoriteProfiles.filter(item => item !== code);
+            pinnedProfiles = pinnedProfiles.filter(item => item !== code);
+            saveProfiles();
+            renderMainPanel();
+            render();
+          });
+          row.appendChild(remove);
+        }
+        return row;
+      };
+
+      const list = document.createElement("div");
+      list.className = "profile-code-list";
+      sortSection(DEFAULTS).forEach(code => list.appendChild(buildCodeRow(code, true)));
+      sortSection(profileCodes).forEach(code => list.appendChild(buildCodeRow(code, false)));
       panel.appendChild(list);
     }
 
@@ -888,7 +979,7 @@
     // 頁籤上的已選數量
     document.querySelectorAll(".gcount").forEach(badge => {
       const n = badge.dataset.workspace === "profile"
-        ? Number(!!selectedProfile)
+        ? selectedProfiles.length
         : selected.length + Number(!!selectedGender);
       badge.textContent = n;
       badge.classList.toggle("show", n > 0);
@@ -981,8 +1072,9 @@
     });
     addCustoms("end");
     const prompt = parts.join(", ");
-    currentPrompt = selectedProfile
-      ? `${prompt}${prompt ? " " : ""}--p ${selectedProfile}`
+    const profileTail = selectedProfiles.length ? `--profile ${selectedProfiles.join(" ")}` : "";
+    currentPrompt = profileTail
+      ? `${prompt}${prompt ? " " : ""}${profileTail}`
       : prompt;
   }
 
@@ -1136,7 +1228,7 @@
       savePromptEditing();
       syncCustomSeparators();
       updateCustomChip(word);
-      emptyHint.style.display = (selected.length || selectedGender || hasCustomText() || selectedProfile) ? "none" : "";
+      emptyHint.style.display = (selected.length || selectedGender || hasCustomText() || selectedProfiles.length) ? "none" : "";
       updateCurrentPrompt();
     });
     span.addEventListener("keydown", e => {
@@ -1274,7 +1366,7 @@
     });
 
     chipsEl.querySelectorAll(".chip").forEach(c => c.remove());
-    emptyHint.style.display = (selected.length || gender || hasCustomText() || selectedProfile) ? "none" : "";
+    emptyHint.style.display = (selected.length || gender || hasCustomText() || selectedProfiles.length) ? "none" : "";
 
     const addWordChip = slug => {
       const w = wordIndex[slug];
@@ -1333,25 +1425,25 @@
     }
     tailSlugs.forEach(addWordChip);
     customWords.forEach(appendCustomChip);
-    if (selectedProfile) {
+    selectedProfiles.forEach(code => {
       const chip = document.createElement("button");
       chip.className = "chip chip-profile";
       chip.type = "button";
       chip.title = "Profile｜點擊取消套用";
       const label = document.createElement("span");
-      label.textContent = `profile · ${selectedProfile}`;
+      label.textContent = `profile · ${code}`;
       const remove = document.createElement("span");
       remove.className = "x";
       remove.textContent = "×";
       chip.append(label, " ", remove);
       chip.addEventListener("click", () => {
-        selectedProfile = "";
+        selectedProfiles = selectedProfiles.filter(item => item !== code);
         saveProfiles();
         renderMainPanel();
         render();
       });
       chipsEl.appendChild(chip);
-    }
+    });
 
     // 提示詞字串（複製用純文字 + 預覽用分色顯示）
     currentPromptTokens = tokens;
@@ -1394,11 +1486,11 @@
 
     appendCustomGroup("end", !!tokens.length, false);
     promptText.appendChild(buildDropZone("end", "移到提示詞最後方"));
-    if (selectedProfile) {
+    if (selectedProfiles.length) {
       if (tokens.length || hasCustomText()) promptText.appendChild(document.createTextNode(" "));
       const profile = document.createElement("span");
       profile.className = "pw-profile";
-      profile.textContent = `--p ${selectedProfile}`;
+      profile.textContent = `--profile ${selectedProfiles.join(" ")}`;
       profile.title = "已套用的 Profile 代碼";
       promptText.appendChild(profile);
     }
@@ -1704,14 +1796,14 @@
   });
 
   clearBtn.addEventListener("click", () => {
-    if (!selected.length && !selectedGender && !hairSecond && !customWords.length && !selectedProfile && !Object.keys(promptOverrides).length) return;
+    if (!selected.length && !selectedGender && !hairSecond && !customWords.length && !selectedProfiles.length && !Object.keys(promptOverrides).length) return;
     selected = [];
     promptOverrides = {};
     customWords = [];
     activeCustomId = "";
     clothingColors = {};
     saveClothingColors();
-    selectedProfile = "";
+    selectedProfiles = [];
     saveProfiles();
     clearEyeColors();
     setGender("");
