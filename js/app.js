@@ -59,6 +59,7 @@
   const SELECTED_PROFILES_KEY = "niji-selected-profiles";
   const FAVORITE_PROFILES_KEY = "niji-favorite-profiles";
   const PINNED_PROFILES_KEY = "niji-pinned-profiles";
+  const PROFILE_ALIASES_KEY = "niji-profile-aliases";
   const DEFAULTS = Array.isArray(typeof DEFAULT_PROFILE_CODES !== "undefined" ? DEFAULT_PROFILE_CODES : null)
     ? DEFAULT_PROFILE_CODES : [];
   const isDefaultCode = c => DEFAULTS.includes(c);
@@ -67,10 +68,12 @@
   let selectedProfiles = loadSelectedProfiles();
   let favoriteProfiles = loadArrayKey(FAVORITE_PROFILES_KEY);
   let pinnedProfiles = loadArrayKey(PINNED_PROFILES_KEY);
+  let profileAliases = loadAliasMap(); // { code: 自訂顯示名稱 }
   // Profile 篩選/搜尋（僅存於記憶體，不持久化）
   let profileSearchOpen = false;
   let profileSearchQuery = "";
   let profileFavFilter = false;
+  const PROFILE_LIST_VISIBLE = 5; // 清單最多顯示幾列，其餘捲動
 
   function normalizeProfileCode(value) {
     return value.replace(/^\s*--(?:profile|p)\s+/i, "").replace(/\s+/g, " ").trim();
@@ -90,6 +93,18 @@
       const raw = JSON.parse(localStorage.getItem(key) || "[]");
       return Array.isArray(raw) ? raw.filter(c => typeof c === "string") : [];
     } catch { return []; }
+  }
+
+  function loadAliasMap() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(PROFILE_ALIASES_KEY) || "{}");
+      if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+      const map = {};
+      Object.keys(raw).forEach(code => {
+        if (typeof raw[code] === "string" && raw[code].trim()) map[code] = raw[code];
+      });
+      return map;
+    } catch { return {}; }
   }
 
   function loadProfileCodes() {
@@ -116,6 +131,7 @@
     localStorage.setItem(SELECTED_PROFILES_KEY, JSON.stringify(selectedProfiles));
     localStorage.setItem(FAVORITE_PROFILES_KEY, JSON.stringify(favoriteProfiles));
     localStorage.setItem(PINNED_PROFILES_KEY, JSON.stringify(pinnedProfiles));
+    localStorage.setItem(PROFILE_ALIASES_KEY, JSON.stringify(profileAliases));
   }
 
   function loadLegacyCustomAnchor() {
@@ -447,24 +463,76 @@
         else arr.push(code);
       };
 
+      // 點 ✏️ 就地改名：把選取鈕換成輸入框，Enter/失焦儲存、Esc 取消
+      const startRename = (row, choose, code) => {
+        const input = document.createElement("input");
+        input.className = "profile-rename-input";
+        input.type = "text";
+        input.value = profileAliases[code] || "";
+        input.placeholder = code;
+        input.setAttribute("aria-label", `重新命名 ${code}`);
+        let done = false;
+        const finish = save => {
+          if (done) return;
+          done = true;
+          if (save) {
+            const v = input.value.trim();
+            if (v) profileAliases[code] = v;
+            else delete profileAliases[code];
+            saveProfiles();
+          }
+          renderMainPanel();
+        };
+        input.addEventListener("keydown", e => {
+          if (e.key === "Enter") { e.preventDefault(); finish(true); }
+          else if (e.key === "Escape") { e.preventDefault(); finish(false); }
+        });
+        input.addEventListener("blur", () => finish(true));
+        row.replaceChild(input, choose);
+        input.focus();
+        input.select();
+      };
+
       const buildCodeRow = (code, isDefault) => {
+        const alias = profileAliases[code] || "";
         const row = document.createElement("div");
         row.className = "profile-code-row";
         row.classList.toggle("is-default", isDefault);
         row.dataset.code = code;
+        row.dataset.alias = alias.toLowerCase();
         row.dataset.fav = favoriteProfiles.includes(code) ? "true" : "false";
 
         const choose = document.createElement("button");
         choose.className = "profile-code-btn";
         choose.type = "button";
         choose.classList.toggle("active", selectedProfiles.includes(code));
-        choose.textContent = `--p ${code}`;
+        if (alias) {
+          choose.classList.add("has-alias");
+          const nameSpan = document.createElement("span");
+          nameSpan.className = "profile-code-name";
+          nameSpan.textContent = alias;
+          const codeSpan = document.createElement("span");
+          codeSpan.className = "profile-code-sub";
+          codeSpan.textContent = `--p ${code}`;
+          choose.append(nameSpan, codeSpan);
+          choose.title = `--p ${code}`;
+        } else {
+          choose.textContent = `--p ${code}`;
+        }
         choose.addEventListener("click", () => {
           toggleMembership(selectedProfiles, code);
           saveProfiles();
           renderMainPanel();
           render();
         });
+
+        const rename = document.createElement("button");
+        rename.className = "profile-rename-btn";
+        rename.type = "button";
+        rename.textContent = "✏️";
+        rename.title = `重新命名 ${code}`;
+        rename.setAttribute("aria-label", `重新命名 ${code}`);
+        rename.addEventListener("click", () => startRename(row, choose, code));
 
         const fav = document.createElement("button");
         fav.className = "profile-fav-btn";
@@ -492,7 +560,7 @@
           renderMainPanel();
         });
 
-        row.append(choose, fav, pin);
+        row.append(choose, rename, fav, pin);
 
         if (!isDefault) {
           const remove = document.createElement("button");
@@ -505,6 +573,7 @@
             selectedProfiles = selectedProfiles.filter(item => item !== code);
             favoriteProfiles = favoriteProfiles.filter(item => item !== code);
             pinnedProfiles = pinnedProfiles.filter(item => item !== code);
+            delete profileAliases[code];
             saveProfiles();
             renderMainPanel();
             render();
@@ -529,16 +598,33 @@
       // 依搜尋字串與「只看收藏」切換各列顯示（不重建 DOM，保留輸入焦點）
       function applyProfileFilter() {
         const q = profileSearchQuery.trim().toLowerCase();
-        let shown = 0;
+        const visibleRows = [];
         list.querySelectorAll(".profile-code-row").forEach(row => {
           const matchFav = !profileFavFilter || row.dataset.fav === "true";
-          const matchText = !q || row.dataset.code.toLowerCase().includes(q);
+          const matchText = !q || row.dataset.code.toLowerCase().includes(q) || (row.dataset.alias && row.dataset.alias.includes(q));
           const visible = matchFav && matchText;
           row.style.display = visible ? "" : "none";
-          if (visible) shown += 1;
+          if (visible) visibleRows.push(row);
         });
-        emptyMsg.hidden = shown > 0;
+        emptyMsg.hidden = visibleRows.length > 0;
+        limitListHeight(visibleRows);
       }
+
+      // 只顯示前 PROFILE_LIST_VISIBLE 列，其餘可捲動
+      function limitListHeight(visibleRows) {
+        list.style.maxHeight = "";
+        list.style.overflowY = "";
+        list.style.paddingRight = "";
+        if (visibleRows.length <= PROFILE_LIST_VISIBLE) return;
+        const gap = parseFloat(getComputedStyle(list).rowGap) || 6;
+        let h = 0;
+        for (let i = 0; i < PROFILE_LIST_VISIBLE; i += 1) h += visibleRows[i].offsetHeight;
+        h += gap * (PROFILE_LIST_VISIBLE - 1);
+        list.style.maxHeight = `${Math.ceil(h) + 4}px`;
+        list.style.overflowY = "auto";
+        list.style.paddingRight = "4px";
+      }
+
       applyProfileFilter();
     }
 
@@ -1573,7 +1659,7 @@
        （髮型依：長度→質地→瀏海→造型→髮色→髮飾 的順序，逗號串接、最後一項前用 and）
      缺任一部分就跳過；沒選性別時人物詞退回逗號並列。
      背景裝飾詞：逗號並列在最後（參考 niji 7 範例的擺放位置）。
-     （注意：此處依分類名稱組句，若在 data.js 改分類名稱需同步修改） */
+     （注意：此處依分類名稱組句，若在 prompts.js 改分類名稱需同步修改） */
   function editableToken(defaultText, editKey, props = {}) {
     const override = promptOverrides[editKey]?.trim();
     return { ...props, defaultText, editKey, text: override || defaultText };

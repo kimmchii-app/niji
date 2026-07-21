@@ -848,12 +848,14 @@ body {
 }
 .profile-code-row {
   display: flex;
+  align-items: center;
   gap: 6px;
 }
 .profile-code-btn,
 .profile-delete-btn,
 .profile-fav-btn,
-.profile-pin-btn {
+.profile-pin-btn,
+.profile-rename-btn {
   border: 1px solid var(--word-border);
   border-radius: 9px;
   background: var(--word-bg);
@@ -869,6 +871,36 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.profile-code-btn.has-alias {   /* 已改名：上方自訂名、下方原始代碼 */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  white-space: normal;
+}
+.profile-code-name,
+.profile-code-sub {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profile-code-name {
+  font-weight: 700;
+}
+.profile-code-sub {
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+.profile-rename-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid var(--profile);
+  border-radius: 9px;
+  background: var(--word-bg);
+  color: var(--text);
+  padding: 8px 10px;
+}
 .profile-code-btn.active {
   border-color: var(--profile);
   background: var(--profile-soft);
@@ -880,7 +912,8 @@ body {
   color: var(--danger);
 }
 .profile-fav-btn,
-.profile-pin-btn {
+.profile-pin-btn,
+.profile-rename-btn {
   flex: 0 0 34px;
   padding: 8px 6px;
   text-align: center;
