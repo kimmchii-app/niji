@@ -25,6 +25,7 @@
   --custom-soft: #fff0eb;
   --profile: #6558c4;
   --profile-soft: #efedff;
+  --profile-gold: #c99a3b;
   --radius: 14px;
 }
 
@@ -52,6 +53,7 @@
   --custom-soft: #4b3432;
   --profile: #aaa1ff;
   --profile-soft: #373451;
+  --profile-gold: #e3b95e;
 }
 
 html { -webkit-text-size-adjust: 100%; }
@@ -919,20 +921,24 @@ body {
   text-align: center;
   line-height: 1;
 }
-.profile-fav-btn.active {           /* 已收藏：暖金實心星 */
-  color: #e8b420;
-  border-color: #e8b420;
+.profile-fav-btn.active {           /* 已收藏：精緻暖金星 */
+  color: var(--profile-gold);
+  border-color: var(--profile-gold);
 }
 .profile-pin-btn.active {           /* 已置頂：同 profile 色系 */
   color: var(--profile);
   border-color: var(--profile);
   background: var(--profile-soft);
 }
-.profile-code-row.is-default {   /* 系統預設：上底色 */
-  background: #e49d23;
+.profile-code-row.is-default {   /* 系統預設：與 App 同色系的柔紫框 */
+  background: var(--profile-soft);
+  border: 1px solid var(--profile);
   padding: 4px 5px;
   border-radius: 11px;
   align-items: center;
+}
+.profile-code-row.is-default .profile-code-btn:not(.active) {
+  color: var(--profile);
 }
 .profile-toolbar {
   display: flex;
