@@ -992,8 +992,8 @@ body {
   white-space: nowrap;
 }
 .profile-fav-filter.active {
-  color: #e8b420;
-  border-color: #e8b420;
+  color: var(--profile-gold);
+  border-color: var(--profile-gold);
 }
 .profile-empty-msg {
   margin: 2px;

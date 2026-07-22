@@ -1818,6 +1818,36 @@
     });
   }
 
+  function probeImage(src) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = src;
+    });
+  }
+
+  // profile 示範圖：一個代碼可多張（base、(1)、(2)…連續、遇缺即停），依編號順序回傳
+  async function probeProfileImages(codes) {
+    const MAX = 30;
+    const out = [];
+    for (const code of codes) {
+      const zh = profileAliases[code] || code;
+      for (let i = 0; i <= MAX; i++) {
+        const candidates = i === 0
+          ? [`profile-images/${code}.png`]
+          : [`profile-images/${code}(${i}).png`, `profile-images/${code} (${i}).png`];
+        let found = null;
+        for (const src of candidates) {
+          if (await probeImage(src)) { found = src; break; }
+        }
+        if (!found) break; // 該編號兩種寫法都沒有 → 遇缺即停
+        out.push({ src: found, zh: out.filter(o => o.en === `--profile ${code}`).length ? `${zh} ${i + 1}` : zh, en: `--profile ${code}` });
+      }
+    }
+    return out;
+  }
+
   /* ===== 隨機輪播 ===== */
   let pool = [];        // [{ src, zh, en }]
   let slideIdx = 0;
@@ -1836,7 +1866,7 @@
     const token = ++rebuildToken;
     stopTimer();
 
-    if (!selected.length) {
+    if (!selected.length && !selectedProfiles.length) {
       pool = [];
       slideshow.hidden = true;
       galleryHint.style.display = "";
@@ -1861,15 +1891,22 @@
         uniqueImages.set(item.src, { ...item });
       }
     });
-    pool = shuffle([...uniqueImages.values()]);
+
+    // profile 示範圖照編號順序，接在（打亂後的）詞彙圖後面
+    const profileImgs = await probeProfileImages(selectedProfiles);
+    if (token !== rebuildToken) return; // 探測期間又變了，放棄
+    pool = [...shuffle([...uniqueImages.values()]), ...profileImgs];
     slideIdx = 0;
 
     if (!pool.length) {
       slideshow.hidden = true;
       galleryHint.style.display = "";
-      if (!imageFiles.length) {
+      if (selected.length && !imageFiles.length) {
         galleryHint.innerHTML =
           `尚未建立圖片索引 🖼<br>將圖片放入 <b>images/</b> 後，執行 <b>update-image-index.cmd</b>`;
+      } else if (selectedProfiles.length && !selected.length) {
+        galleryHint.innerHTML =
+          `找不到這些 profile 的示範圖 🖼<br>把 <b>&lt;代碼&gt;.png</b> 放進 <b>profile-images/</b>`;
       } else {
         const keywords = selected.map(s => wordIndex[s].en).join("、");
         galleryHint.innerHTML =
