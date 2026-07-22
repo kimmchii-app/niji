@@ -629,10 +629,15 @@
     }
 
     renderMainPanel = () => {
+      // 重建前記住 profile 清單的捲動位置，避免選/取消時跳回最上面
+      const prevList = panel.querySelector(".profile-code-list");
+      const prevScroll = prevList ? prevList.scrollTop : 0;
       panel.innerHTML = "";
       panel.classList.remove("profile-panel");
       if (activeWorkspace === "profile") {
         buildProfilePanel();
+        const newList = panel.querySelector(".profile-code-list");
+        if (newList) newList.scrollTop = prevScroll;
         return;
       }
 
@@ -1865,6 +1870,7 @@
   async function rebuildSlideshow() {
     const token = ++rebuildToken;
     stopTimer();
+    const keepSrc = pool[slideIdx] ? pool[slideIdx].src : null; // 記住目前這張，重建後盡量停在同一張
 
     if (!selected.length && !selectedProfiles.length) {
       pool = [];
@@ -1896,7 +1902,8 @@
     const profileImgs = await probeProfileImages(selectedProfiles);
     if (token !== rebuildToken) return; // 探測期間又變了，放棄
     pool = [...shuffle([...uniqueImages.values()]), ...profileImgs];
-    slideIdx = 0;
+    const keepIdx = keepSrc ? pool.findIndex(item => item.src === keepSrc) : -1;
+    slideIdx = keepIdx >= 0 ? keepIdx : 0; // 目前這張還在就停在原處，否則回到第一張
 
     if (!pool.length) {
       slideshow.hidden = true;
@@ -1917,7 +1924,7 @@
 
     galleryHint.style.display = "none";
     slideshow.hidden = false;
-    showSlide(0);
+    showSlide(slideIdx);
     startTimer();
   }
 
