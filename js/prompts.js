@@ -25,7 +25,9 @@ const PROMPT_DATA = [
       { zh: "奇幻油畫", en: "exquisite fantasy oil painting", slug: "fantasy-oil-painting" },
       { zh: "復古油畫", en: "vintage oil painting style", slug: "vintage-oil-painting" },
       { zh: "Y2K風", en: "Y2K aesthetic", slug: "y2k" },
-      { zh: "絕佳傑作", en: "masterpiece", slug: "masterpiece" }
+      { zh: "絕佳傑作", en: "masterpiece", slug: "masterpiece" },
+      { zh: "暗黑戀愛漫畫封面", en: "dark romance manhwa premium cover art", slug: "dark-romance-manhwa-cover" },
+      { zh: "電影感", en: "cinematic", slug: "cinematic" }
     ]
   },
   {
@@ -46,7 +48,10 @@ const PROMPT_DATA = [
       { zh: "正面", en: "front face", slug: "front-face" },
       { zh: "側身看鏡頭", en: "side profile looking at viewer", slug: "side-look-viewer" },
       { zh: "上半身照", en: "upper body shot", slug: "upper-body" },
-      { zh: "中景鏡頭", en: "medium shot", slug: "medium-shot" }
+      { zh: "中景鏡頭", en: "medium shot", slug: "medium-shot" },
+      { zh: "35mm鏡頭", en: "35mm lens", slug: "35mm-lens" },
+      { zh: "景深", en: "depth of field", slug: "depth-of-field" },
+      { zh: "動態模糊", en: "motion blur", slug: "motion-blur" }
     ]
   },
   {
@@ -70,7 +75,8 @@ const PROMPT_DATA = [
       { zh: "美式復古餐廳", en: "retro American diner color palette", slug: "diner-palette" },
       { zh: "淡彩", en: "pale color palette", slug: "pale-tones" },
       { zh: "高鮮明度", en: "highly vivid colors", slug: "high-vivid" },
-      { zh: "空靈感性", en: "ethereal and emotional atmosphere", slug: "ethereal-emotional" }
+      { zh: "空靈感性", en: "ethereal and emotional atmosphere", slug: "ethereal-emotional" },
+      { zh: "藍黃紅虹彩", en: "iridescent blue-yellow-red", slug: "iridescent-blue-yellow-red" }
     ]
   },
   {
@@ -90,7 +96,12 @@ const PROMPT_DATA = [
       { zh: "晴朗日光", en: "bright sunny daylight", slug: "bright-sunny-daylight" },
       { zh: "溫暖光線", en: "warm lighting", slug: "warm-lighting" },
       { zh: "彩繪玻璃光影", en: "colorful light streaming through stained glass and casting patterns on the floor", slug: "stained-glass-light" },
-      { zh: "光影", en: "light and shadow", slug: "light-and-shadow" }
+      { zh: "光影", en: "light and shadow", slug: "light-and-shadow" },
+      { zh: "昏暗光線", en: "dimly lit", slug: "dimly-lit" },
+      { zh: "明暗對比", en: "chiaroscuro", slug: "chiaroscuro" },
+      { zh: "體積生物冷光", en: "volumetric bioluminescent light", slug: "volumetric-bioluminescent-light" },
+      { zh: "臉部聚光", en: "spotlight illuminating face", slug: "spotlight-on-face" },
+      { zh: "綠光魔法", en: "green magical light", slug: "green-magical-light" }
     ]
   },
   {
@@ -118,7 +129,10 @@ const PROMPT_DATA = [
       { zh: "工作室", en: "workshop", slug: "workshop" },
       { zh: "溫暖室內", en: "a warm and cozy interior", slug: "warm-cozy-interior" },
       { zh: "窗外下雪", en: "snow falling outside the window", slug: "snow-outside-window" },
-      { zh: "玫瑰花園", en: "a rose garden", slug: "rose-garden" }
+      { zh: "玫瑰花園", en: "a rose garden", slug: "rose-garden" },
+      { zh: "夜晚", en: "at night", slug: "at-night" },
+      { zh: "宅邸室內", en: "mansion interior", slug: "mansion-interior" },
+      { zh: "空無背景", en: "void background", slug: "void-background" }
     ]
   },
   /* ========== 角色設定 ========== */
@@ -375,7 +389,8 @@ const PROMPT_DATA = [
       { zh: "星光眼", en: "sparkling eyes", slug: "sparkling-eyes" },
       { zh: "藍色星空眼", en: "blue starry eyes", slug: "blue-starry-eyes" },
       { zh: "深藍星空眼", en: "starry dark blue eyes", slug: "dark-blue-starry-eyes" },
-      { zh: "右眼淚痣", en: "a tear mole under the right eye", slug: "right-eye-tear-mole" }
+      { zh: "右眼淚痣", en: "a tear mole under the right eye", slug: "right-eye-tear-mole" },
+      { zh: "深棕眼睛", en: "dark brown eyes", slug: "dark-brown-eyes", eyeColor: "dark brown" }
     ]
   },
   {
@@ -393,7 +408,9 @@ const PROMPT_DATA = [
       { zh: "纖細身材", en: "slender figure", slug: "slender-figure" },
       { zh: "元氣桃色妝", en: "fresh peachy makeup", slug: "peachy-makeup", gender: "f" },
       { zh: "皮膚蒼白", en: "pale skin", slug: "pale-skin" },
-      { zh: "沾到鮮奶油", en: "dabs of whipped cream on the nose and shoulders", slug: "cream-dabs" }
+      { zh: "沾到鮮奶油", en: "dabs of whipped cream on the nose and shoulders", slug: "cream-dabs" },
+      { zh: "英俊", en: "handsome", slug: "handsome" },
+      { zh: "威嚇逼近感", en: "intimidating and looming", slug: "intimidating-looming" }
     ]
   },
   {
@@ -413,7 +430,8 @@ const PROMPT_DATA = [
       { zh: "溫柔凝視", en: "soft and gentle gaze", slug: "gentle-gaze" },
       { zh: "甜蜜喜悅笑容", en: "sweet and joyful smile", slug: "sweet-joyful-smile" },
       { zh: "驚恐", en: "a frightened expression", slug: "frightened-expression" },
-      { zh: "冷顏", en: "a cold expression", slug: "cold-expression" }
+      { zh: "冷顏", en: "a cold expression", slug: "cold-expression" },
+      { zh: "淡然不為所動", en: "unbothered", slug: "unbothered" }
     ]
   },
   {
@@ -464,7 +482,9 @@ const PROMPT_DATA = [
       { zh: "短褲", en: "shorts", slug: "clothing-shorts", colorable: true },
       { zh: "西裝褲", en: "suit pants", slug: "clothing-suit-pants", colorable: true },
       { zh: "領帶", en: "tie", slug: "clothing-tie", colorable: true },
-      { zh: "古風服裝", en: "traditional Chinese attire", slug: "clothing-chinese-attire", colorable: true }
+      { zh: "古風服裝", en: "traditional Chinese attire", slug: "clothing-chinese-attire", colorable: true },
+      { zh: "黑色兜帽", en: "black hood", slug: "black-hood" },
+      { zh: "白色扣領襯衫", en: "white button-up shirt", slug: "white-button-up-shirt" }
     ]
   },
   {
@@ -490,7 +510,9 @@ const PROMPT_DATA = [
       { zh: "坐在沙發上", en: "sitting on a sofa", slug: "sitting-on-sofa" },
       { zh: "身蓋毯子", en: "covered with a blanket", slug: "covered-with-blanket" },
       { zh: "花園下午茶", en: "sitting and enjoying afternoon tea in the rose garden", slug: "rose-garden-afternoon-tea" },
-      { zh: "S曲線", en: "S-curve pose", slug: "s-curve-pose", gender: "f" }
+      { zh: "S曲線", en: "S-curve pose", slug: "s-curve-pose", gender: "f" },
+      { zh: "張腿而坐", en: "manspreading", slug: "manspreading", gender: "m" },
+      { zh: "施放咒語", en: "casting a spell", slug: "casting-a-spell" }
     ]
   },
   {
@@ -533,7 +555,8 @@ const PROMPT_DATA = [
       { zh: "日月飾球", en: "a sun and a moon decorative orb surrounding by {poss} side, orbs emitting a soft orange glow", slug: "sun-moon-orbs" },
       { zh: "桌上黃金聖杯", en: "a golden chalice displayed on the table in front", slug: "golden-chalice-table" },
       { zh: "桌上長劍", en: "a sword displayed on the table in front", slug: "sword-on-table" },
-      { zh: "大袋金幣", en: "a large bag of gold coins placed on the tabletop", slug: "large-bag-gold-coins" }
+      { zh: "大袋金幣", en: "a large bag of gold coins placed on the tabletop", slug: "large-bag-gold-coins" },
+      { zh: "皮革椅", en: "a leather chair", slug: "leather-chair" }
     ]
   },
   {
