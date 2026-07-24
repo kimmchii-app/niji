@@ -6,7 +6,6 @@
   const CUSTOM_WORDS_KEY = "niji-custom-words";
   const PROMPT_OVERRIDES_KEY = "niji-prompt-overrides";
   const SLIDE_INTERVAL = 5000; // 自動切換間隔（毫秒）
-  const imageFiles = Array.isArray(window.IMAGE_FILES) ? window.IMAGE_FILES : [];
 
   const chipsEl = document.getElementById("selectedChips");
   const emptyHint = document.getElementById("emptyHint");
@@ -60,12 +59,27 @@
   const FAVORITE_PROFILES_KEY = "niji-favorite-profiles";
   const PINNED_PROFILES_KEY = "niji-pinned-profiles";
   const PROFILE_ALIASES_KEY = "niji-profile-aliases";
-  const DEFAULTS = Array.isArray(typeof DEFAULT_PROFILE_CODES !== "undefined" ? DEFAULT_PROFILE_CODES : null)
+  const PROFILE_VERSIONS_KEY = "niji-profile-versions";
+  const NIJI_VERSION_KEY = "niji-version";
+  const DEFAULTS_NIJI7 = Array.isArray(typeof DEFAULT_PROFILE_CODES !== "undefined" ? DEFAULT_PROFILE_CODES : null)
     ? DEFAULT_PROFILE_CODES : [];
+  const DEFAULTS_NIJI6 = Array.isArray(typeof DEFAULT_PROFILE_CODES_NIJI6 !== "undefined" ? DEFAULT_PROFILE_CODES_NIJI6 : null)
+    ? DEFAULT_PROFILE_CODES_NIJI6 : [];
+  const DEFAULTS = [...DEFAULTS_NIJI7, ...DEFAULTS_NIJI6];
   const isDefaultCode = c => DEFAULTS.includes(c);
   let profileCodes = loadProfileCodes();
   const isKnownCode = c => isDefaultCode(c) || profileCodes.includes(c);
   let selectedProfiles = loadSelectedProfiles();
+  let selectedNiji = loadNiji(); // "" | "6" | "7"
+  let profileVersions = loadVersionMap(); // { code: "6" | "7" }（僅自訂代碼；預設代碼由清單歸屬決定）
+  // 代碼的 niji 版本：預設代碼看歸屬清單；自訂代碼查 profileVersions，未知一律視為 "7"（既有代碼皆 niji7）
+  const codeNijiVersion = code => {
+    if (DEFAULTS_NIJI6.includes(code)) return "6";
+    if (DEFAULTS_NIJI7.includes(code)) return "7";
+    return profileVersions[code] === "6" ? "6" : "7";
+  };
+  // 在目前選擇的 niji 模式下，此代碼是否可用（niji 6 只能用 niji6 代碼；niji 7 或未選皆可用）
+  const codeUsableNow = code => selectedNiji !== "6" || codeNijiVersion(code) === "6";
   let favoriteProfiles = loadArrayKey(FAVORITE_PROFILES_KEY);
   let pinnedProfiles = loadArrayKey(PINNED_PROFILES_KEY);
   let profileAliases = loadAliasMap(); // { code: 自訂顯示名稱 }
@@ -126,12 +140,34 @@
     return isKnownCode(legacy) ? [legacy] : [];
   }
 
+  function loadVersionMap() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(PROFILE_VERSIONS_KEY) || "{}");
+      if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+      const map = {};
+      Object.keys(raw).forEach(code => {
+        if (raw[code] === "6" || raw[code] === "7") map[code] = raw[code];
+      });
+      return map;
+    } catch { return {}; }
+  }
+
+  function loadNiji() {
+    const v = localStorage.getItem(NIJI_VERSION_KEY) || "";
+    return v === "6" || v === "7" ? v : "";
+  }
+
+  function saveNiji() {
+    localStorage.setItem(NIJI_VERSION_KEY, selectedNiji);
+  }
+
   function saveProfiles() {
     localStorage.setItem(PROFILE_CODES_KEY, JSON.stringify(profileCodes));
     localStorage.setItem(SELECTED_PROFILES_KEY, JSON.stringify(selectedProfiles));
     localStorage.setItem(FAVORITE_PROFILES_KEY, JSON.stringify(favoriteProfiles));
     localStorage.setItem(PINNED_PROFILES_KEY, JSON.stringify(pinnedProfiles));
     localStorage.setItem(PROFILE_ALIASES_KEY, JSON.stringify(profileAliases));
+    localStorage.setItem(PROFILE_VERSIONS_KEY, JSON.stringify(profileVersions));
   }
 
   function loadLegacyCustomAnchor() {
@@ -384,24 +420,73 @@
       input.type = "text";
       input.placeholder = "輸入 Profile 代碼";
       input.setAttribute("aria-label", "Profile 代碼");
+      // 新增代碼的 niji 版本（預設跟隨目前選的 niji 模式，未選則預設 7）
+      let addVersion = selectedNiji || "7";
+      const verToggle = document.createElement("div");
+      verToggle.className = "profile-add-version";
+      verToggle.setAttribute("role", "group");
+      verToggle.setAttribute("aria-label", "新增代碼的 niji 版本");
+      ["6", "7"].forEach(ver => {
+        const vbtn = document.createElement("button");
+        vbtn.className = "profile-add-version-btn";
+        vbtn.type = "button";
+        vbtn.textContent = `n${ver}`;
+        vbtn.title = `新增為 niji ${ver} 代碼`;
+        vbtn.classList.toggle("active", addVersion === ver);
+        vbtn.addEventListener("click", () => {
+          addVersion = ver;
+          verToggle.querySelectorAll(".profile-add-version-btn").forEach(b =>
+            b.classList.toggle("active", b === vbtn));
+        });
+        verToggle.appendChild(vbtn);
+      });
       const add = document.createElement("button");
       add.className = "btn btn-copy profile-add-btn";
       add.type = "submit";
       add.textContent = "➕ 新增";
-      form.append(input, add);
+      form.append(input, verToggle, add);
       form.addEventListener("submit", e => {
         e.preventDefault();
         const codes = parseProfileInput(input.value);
         if (!codes.length) { showToast("請輸入 Profile 代碼"); return; }
         codes.forEach(code => {
-          if (!isDefaultCode(code) && !profileCodes.includes(code)) profileCodes.push(code);
-          if (!selectedProfiles.includes(code)) selectedProfiles.push(code);
+          if (!isDefaultCode(code)) {
+            if (!profileCodes.includes(code)) profileCodes.push(code);
+            profileVersions[code] = addVersion; // 記住此自訂代碼的版本
+          }
+          // 只在目前 niji 模式下可用時才自動套用，避免 niji7 代碼混進 niji6 模式
+          if (codeUsableNow(code) && !selectedProfiles.includes(code)) selectedProfiles.push(code);
         });
         saveProfiles();
         renderMainPanel();
         render();
       });
       panel.appendChild(form);
+
+      // Niji 版本切換：--niji 6 / --niji 7（互斥，再點一次取消）
+      const nijiGroup = document.createElement("div");
+      nijiGroup.className = "niji-toggle-group";
+      ["6", "7"].forEach(ver => {
+        const btn = document.createElement("button");
+        btn.className = "niji-btn";
+        btn.type = "button";
+        btn.textContent = `niji ${ver}`;
+        btn.title = `套用 --niji ${ver}`;
+        btn.classList.toggle("active", selectedNiji === ver);
+        btn.addEventListener("click", () => {
+          selectedNiji = selectedNiji === ver ? "" : ver;
+          saveNiji();
+          // niji 6 模式無法使用 niji7 專用 profile → 自動解除已選的 niji7 代碼
+          if (selectedNiji === "6") {
+            selectedProfiles = selectedProfiles.filter(c => codeNijiVersion(c) === "6");
+            saveProfiles();
+          }
+          renderMainPanel();
+          render();
+        });
+        nijiGroup.appendChild(btn);
+      });
+      panel.appendChild(nijiGroup);
 
       const toolbar = document.createElement("div");
       toolbar.className = "profile-toolbar";
@@ -574,6 +659,7 @@
             favoriteProfiles = favoriteProfiles.filter(item => item !== code);
             pinnedProfiles = pinnedProfiles.filter(item => item !== code);
             delete profileAliases[code];
+            delete profileVersions[code];
             saveProfiles();
             renderMainPanel();
             render();
@@ -602,7 +688,9 @@
         list.querySelectorAll(".profile-code-row").forEach(row => {
           const matchFav = !profileFavFilter || row.dataset.fav === "true";
           const matchText = !q || row.dataset.code.toLowerCase().includes(q) || (row.dataset.alias && row.dataset.alias.includes(q));
-          const visible = matchFav && matchText;
+          // niji 6 模式只顯示 niji6 代碼；niji 7 或未選則全顯示
+          const matchNiji = codeUsableNow(row.dataset.code);
+          const visible = matchFav && matchText && matchNiji;
           row.style.display = visible ? "" : "none";
           if (visible) visibleRows.push(row);
         });
@@ -1228,10 +1316,9 @@
     });
     addCustoms("end");
     const prompt = parts.join(", ");
+    const nijiTail = selectedNiji ? `--niji ${selectedNiji}` : "";
     const profileTail = selectedProfiles.length ? `--profile ${selectedProfiles.join(" ")}` : "";
-    currentPrompt = profileTail
-      ? `${prompt}${prompt ? " " : ""}${profileTail}`
-      : prompt;
+    currentPrompt = [prompt, nijiTail, profileTail].filter(Boolean).join(" ");
   }
 
   function resolveCustomAnchor(word, tokens) {
@@ -1384,7 +1471,7 @@
       savePromptEditing();
       syncCustomSeparators();
       updateCustomChip(word);
-      emptyHint.style.display = (selected.length || selectedGender || hasCustomText() || selectedProfiles.length) ? "none" : "";
+      emptyHint.style.display = (selected.length || selectedGender || hasCustomText() || selectedProfiles.length || selectedNiji) ? "none" : "";
       updateCurrentPrompt();
     });
     span.addEventListener("keydown", e => {
@@ -1522,7 +1609,7 @@
     });
 
     chipsEl.querySelectorAll(".chip").forEach(c => c.remove());
-    emptyHint.style.display = (selected.length || gender || hasCustomText() || selectedProfiles.length) ? "none" : "";
+    emptyHint.style.display = (selected.length || gender || hasCustomText() || selectedProfiles.length || selectedNiji) ? "none" : "";
 
     const addWordChip = slug => {
       const w = wordIndex[slug];
@@ -1581,6 +1668,25 @@
     }
     tailSlugs.forEach(addWordChip);
     customWords.forEach(appendCustomChip);
+    if (selectedNiji) {
+      const chip = document.createElement("button");
+      chip.className = "chip chip-niji";
+      chip.type = "button";
+      chip.title = "Niji 版本｜點擊取消套用";
+      const label = document.createElement("span");
+      label.textContent = `niji ${selectedNiji}`;
+      const remove = document.createElement("span");
+      remove.className = "x";
+      remove.textContent = "×";
+      chip.append(label, " ", remove);
+      chip.addEventListener("click", () => {
+        selectedNiji = "";
+        saveNiji();
+        renderMainPanel();
+        render();
+      });
+      chipsEl.appendChild(chip);
+    }
     selectedProfiles.forEach(code => {
       const chip = document.createElement("button");
       chip.className = "chip chip-profile";
@@ -1642,8 +1748,18 @@
 
     appendCustomGroup("end", !!tokens.length, false);
     promptText.appendChild(buildDropZone("end", "移到提示詞最後方"));
+    let tailHasContent = tokens.length || hasCustomText();
+    if (selectedNiji) {
+      if (tailHasContent) promptText.appendChild(document.createTextNode(" "));
+      const niji = document.createElement("span");
+      niji.className = "pw-niji";
+      niji.textContent = `--niji ${selectedNiji}`;
+      niji.title = "已套用的 Niji 版本";
+      promptText.appendChild(niji);
+      tailHasContent = true;
+    }
     if (selectedProfiles.length) {
-      if (tokens.length || hasCustomText()) promptText.appendChild(document.createTextNode(" "));
+      if (tailHasContent) promptText.appendChild(document.createTextNode(" "));
       const profile = document.createElement("span");
       profile.className = "pw-profile";
       profile.textContent = `--profile ${selectedProfiles.join(" ")}`;
@@ -1804,25 +1920,6 @@
   }
   enableDragScroll(chipsEl);
 
-  /* ===== 依檔名中的英文提示詞配對圖片 ===== */
-  function normalizeImageText(value) {
-    return value
-      .normalize("NFKC")
-      .toLowerCase()
-      .replace(/[_-]+/g, " ")
-      .replace(/[^\p{L}\p{N}]+/gu, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  function findWordImages(slug) {
-    const keyword = normalizeImageText(resolveEn(wordIndex[slug].en));
-    return imageFiles.filter(src => {
-      const filename = src.split("/").pop().replace(/\.[^.]+$/, "");
-      return normalizeImageText(filename).includes(keyword);
-    });
-  }
-
   function probeImage(src) {
     return new Promise(resolve => {
       const img = new Image();
@@ -1853,72 +1950,37 @@
     return out;
   }
 
-  /* ===== 隨機輪播 ===== */
+  /* ===== Profile 示範圖輪播 ===== */
   let pool = [];        // [{ src, zh, en }]
   let slideIdx = 0;
   let slideTimer = null;
   let rebuildToken = 0;
-
-  function shuffle(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  }
 
   async function rebuildSlideshow() {
     const token = ++rebuildToken;
     stopTimer();
     const keepSrc = pool[slideIdx] ? pool[slideIdx].src : null; // 記住目前這張，重建後盡量停在同一張
 
-    if (!selected.length && !selectedProfiles.length) {
+    if (!selectedProfiles.length) {
       pool = [];
       slideshow.hidden = true;
       galleryHint.style.display = "";
-      galleryHint.innerHTML = "選詞後，這裡會隨機輪播對應的參考圖片";
+      galleryHint.innerHTML = "選擇 profile 代碼後，這裡會輪播對應的示範圖";
       return;
     }
 
-    const lists = selected.map(slug =>
-      findWordImages(slug).map(src => ({
-        src, zh: wordIndex[slug].zh, en: resolveEn(wordIndex[slug].en), slug
-      }))
-    );
-    if (token !== rebuildToken) return; // 期間選詞又變了，放棄這次結果
-
-    const uniqueImages = new Map();
-    lists.flat().forEach(item => {
-      const existing = uniqueImages.get(item.src);
-      if (existing) {
-        if (!existing.zh.includes(item.zh)) existing.zh += `、${item.zh}`;
-        if (!existing.en.includes(item.en)) existing.en += `, ${item.en}`;
-      } else {
-        uniqueImages.set(item.src, { ...item });
-      }
-    });
-
-    // profile 示範圖照編號順序，接在（打亂後的）詞彙圖後面
+    // 依所選 profile 代碼、照編號順序輪播其示範圖
     const profileImgs = await probeProfileImages(selectedProfiles);
     if (token !== rebuildToken) return; // 探測期間又變了，放棄
-    pool = [...shuffle([...uniqueImages.values()]), ...profileImgs];
+    pool = profileImgs;
     const keepIdx = keepSrc ? pool.findIndex(item => item.src === keepSrc) : -1;
     slideIdx = keepIdx >= 0 ? keepIdx : 0; // 目前這張還在就停在原處，否則回到第一張
 
     if (!pool.length) {
       slideshow.hidden = true;
       galleryHint.style.display = "";
-      if (selected.length && !imageFiles.length) {
-        galleryHint.innerHTML =
-          `尚未建立圖片索引 🖼<br>將圖片放入 <b>images/</b> 後，執行 <b>update-image-index.cmd</b>`;
-      } else if (selectedProfiles.length && !selected.length) {
-        galleryHint.innerHTML =
-          `找不到這些 profile 的示範圖 🖼<br>把 <b>&lt;代碼&gt;.png</b> 放進 <b>profile-images/</b>`;
-      } else {
-        const keywords = selected.map(s => wordIndex[s].en).join("、");
-        galleryHint.innerHTML =
-          `找不到檔名包含所選英文提示詞的圖片 🖼<br><b>${keywords}</b>`;
-      }
+      galleryHint.innerHTML =
+        `找不到這些 profile 的示範圖 🖼<br>把 <b>&lt;代碼&gt;.png</b> 放進 <b>profile-images/</b>`;
       return;
     }
 
@@ -1991,7 +2053,7 @@
   });
 
   clearBtn.addEventListener("click", () => {
-    if (!selected.length && !selectedGender && !hairSecond && !customWords.length && !selectedProfiles.length && !Object.keys(promptOverrides).length) return;
+    if (!selected.length && !selectedGender && !hairSecond && !customWords.length && !selectedProfiles.length && !selectedNiji && !Object.keys(promptOverrides).length) return;
     selected = [];
     promptOverrides = {};
     customWords = [];
@@ -2000,6 +2062,8 @@
     saveClothingColors();
     selectedProfiles = [];
     saveProfiles();
+    selectedNiji = "";
+    saveNiji();
     clearEyeColors();
     setGender("");
     setHairSecond("");

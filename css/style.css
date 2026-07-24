@@ -218,7 +218,17 @@ body {
 }
 .chip-profile .x,
 :root[data-theme="dark"] .chip-profile .x { color: var(--profile); }
-.pw-profile {
+.chip-niji {
+  max-width: 280px;
+  background: var(--profile-soft);
+  border-color: var(--profile);
+  color: var(--profile);
+  font-weight: 700;
+}
+.chip-niji .x,
+:root[data-theme="dark"] .chip-niji .x { color: var(--profile); }
+.pw-profile,
+.pw-niji {
   color: var(--profile);
   font-weight: 800;
   white-space: nowrap;
@@ -839,6 +849,47 @@ body {
   box-shadow: 0 0 0 2px var(--profile-soft);
 }
 .profile-add-btn { flex: 0 0 auto; background: var(--profile); }
+.profile-add-version {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 4px;
+}
+.profile-add-version-btn {
+  border: 1px solid var(--word-border);
+  border-radius: 9px;
+  background: var(--word-bg);
+  color: var(--text-dim);
+  padding: 8px 9px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.profile-add-version-btn.active {
+  border-color: var(--profile);
+  background: var(--profile-soft);
+  color: var(--profile);
+}
+.niji-toggle-group {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+.niji-btn {
+  flex: 1 1 0;
+  border: 1px solid var(--word-border);
+  border-radius: 9px;
+  background: var(--word-bg);
+  color: var(--text);
+  padding: 8px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+.niji-btn.active {
+  border-color: var(--profile);
+  background: var(--profile-soft);
+  color: var(--profile);
+  font-weight: 800;
+}
 .profile-hint {
   margin: 4px 2px 8px;
   color: var(--text-dim);
@@ -1040,7 +1091,7 @@ body {
   .group-panel .cat-tile { flex-basis: 104px; }
   .profile-add-form { flex-wrap: wrap; }
   .profile-code-input { flex-basis: 100%; }
-  .profile-add-btn { width: 100%; }
+  .profile-add-btn { flex: 1 1 auto; }
   .option-drawer { max-height: 42vh; }
 
   .gallery-panel { min-height: 300px; }
