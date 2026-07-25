@@ -2122,9 +2122,15 @@
     showToast("已清空");
   });
 
-  /* ===== 使用說明彈窗 ===== */
+  /* ===== 使用說明彈窗（頁籤介紹版） ===== */
   const helpModal = document.getElementById("helpModal");
-  document.getElementById("helpToggle").addEventListener("click", () => { helpModal.hidden = false; });
+  const helpTabs = helpModal.querySelectorAll(".help-tab");
+  const setHelpTab = key => {
+    helpTabs.forEach(t => t.classList.toggle("active", t.dataset.helpTab === key));
+    helpModal.querySelectorAll(".help-panel").forEach(p => { p.hidden = p.dataset.helpPanel !== key; });
+  };
+  helpTabs.forEach(t => t.addEventListener("click", () => setHelpTab(t.dataset.helpTab)));
+  document.getElementById("helpToggle").addEventListener("click", () => { helpModal.hidden = false; setHelpTab("start"); });
   document.getElementById("helpClose").addEventListener("click", () => { helpModal.hidden = true; });
   helpModal.addEventListener("click", e => {
     if (e.target === helpModal) helpModal.hidden = true;
