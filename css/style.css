@@ -666,6 +666,25 @@ body {
   font-weight: 700;
 }
 
+/* ===== 服裝抽屜：手風琴收合小組（重用 .cat-group / .group-body-wrap 收合過渡）===== */
+.option-drawer .sub-group { margin-bottom: 6px; }
+.option-drawer .sub-group:last-child { margin-bottom: 0; }
+.sub-group .group-header { color: var(--text); font-size: 0.85rem; }
+.sub-group .sub-icon { font-size: 1rem; }
+.sub-group .sub-name { font-weight: 700; letter-spacing: 0; }
+.sub-group .sub-count {
+  margin-left: auto;
+  display: none;
+  font-size: 0.7rem;
+  color: #fff;
+  background: var(--accent-strong);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.sub-group .sub-count.show { display: inline-block; }
+.sub-group .group-header .arrow { margin-left: 6px; font-size: 0.8rem; }
+.sub-group .group-body { padding-top: 8px; }
+
 /* ===== 右側圖片成列區 ===== */
 .gallery-panel {
   border: 1px solid var(--panel-border);
