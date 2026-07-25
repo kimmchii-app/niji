@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#1a2733">
 <title>Niji 提示詞配搭工具</title>
-<link rel="stylesheet" href="css/style.css?v=20260725b">
+<link rel="stylesheet" href="css/style.css?v=20260725c">
 </head>
 <body>
 
@@ -60,57 +60,78 @@
 
 </main>
 
-<!-- 使用說明彈窗 -->
+<!-- 使用說明彈窗（頁籤介紹版） -->
 <div class="modal-backdrop" id="helpModal" hidden>
   <div class="hair-modal help-modal">
     <h2>🌈 歡迎來到 Niji 提示詞配搭工具！</h2>
-    <p>這裡是 niji 7 的題詞小幫手，只要選好中文標籤就可以請 niji 幫你生成照片！</p>
 
-    <h3>🚀 三步驟上手</h3>
-    <ol>
-      <li><b>點選詞彙</b> — 從下方分類挑喜歡的（畫風、場景、髮型⋯⋯隨你混搭）</li>
-      <li><b>按「📋 複製」</b> — 組好的英文提示詞一鍵入袋</li>
-      <li><b>貼到 niji 上面就可以生成！</b></li>
-    </ol>
+    <div class="help-tabs" role="tablist">
+      <button class="help-tab active" data-help-tab="start" type="button" role="tab">🚀 快速上手</button>
+      <button class="help-tab" data-help-tab="character" type="button" role="tab">🎨 人物設定</button>
+      <button class="help-tab" data-help-tab="tips" type="button" role="tab">✨ 進階技巧</button>
+    </div>
 
-    <h3>🗂 兩個主頁籤</h3>
-    <ul>
-      <li>✨ <b>提示詞</b>：集中選擇畫面、人物與背景裝飾；人物可先選 👩 女性／👨 男性切換詞庫</li>
-      <li>🪪 <b>profile</b>：自行新增並可複選 Profile 代碼，選中的代碼會以 --profile 依序接在提示詞最後</li>
-      <li>最終格式會是 <code>完整的背景與人物提示詞 --p 代碼</code></li>
-    </ul>
+    <!-- 快速上手 -->
+    <section class="help-panel" data-help-panel="start" role="tabpanel">
+      <p>這裡是 niji 7 的題詞小幫手，只要選好中文標籤就可以請 niji 幫你生成照片！</p>
 
-    <h3>💇 髮型這樣玩</h3>
-    <ul>
-      <li>髮型類（長度／髮質／瀏海／造型／髮飾）都是<b>單選</b>，重選自動替換，不怕互相打架</li>
-      <li>選擇髮型長度時會跳出 🎨 <b>髮色視窗</b>；選擇髮質捲度、瀏海或造型則不會打斷操作。挑基本色 → 想要漸層或雙色？再挑一個第二色，工具會自動寫成 <code>pink to blue gradient hair</code> 這種漂亮句子！</li>
-      <li>想反悔？髮型抽屜底部的「🎨 髮色細節」按鈕隨時重開</li>
-    </ul>
+      <h3>🚀 三步驟上手</h3>
+      <ol>
+        <li><b>點選詞彙</b> — 從下方分類挑喜歡的（畫風、場景、髮型⋯⋯隨你混搭）</li>
+        <li><b>按「📋 複製」</b> — 組好的英文提示詞一鍵入袋</li>
+        <li><b>貼到 niji 上面就可以生成！</b></li>
+      </ol>
 
-    <h3>👁 異色瞳這樣選</h3>
-    <ul>
-      <li>先在「眼睛」分類選擇<b>異色瞳</b>，接著於視窗分別挑第一色與第二色</li>
-      <li>工具會自動組成 <code>heterochromia eyes, one eye black, one eye gold</code> 這類完整提示詞</li>
-      <li>想換色時，可用眼睛抽屜底部的「👁 異色瞳細節」隨時重開</li>
-    </ul>
+      <h3>🗂 兩個主頁籤</h3>
+      <ul>
+        <li>✨ <b>提示詞</b>：集中選擇畫面、人物與背景裝飾；人物可先選 👩 女性／👨 男性切換詞庫</li>
+        <li>🪪 <b>profile</b>：自行新增並可複選 Profile 代碼，選中的代碼會以 --profile 依序接在提示詞最後</li>
+        <li>最終格式會是 <code>完整的背景與人物提示詞 --niji 版本 --p 代碼</code>（有選 niji 版本才會加 <code>--niji</code>）</li>
+      </ul>
+    </section>
 
-    <h3>✋ 物品與衣物顏色</h3>
-    <ul>
-      <li>進入「隨身道具」後按<b>手持某個物品</b>，就能從彈窗挑選；重選會自動替換</li>
-      <li>選擇襯衫、連身裙、毛衣、褲子等通用衣物時，會自動開啟顏色選單</li>
-      <li>已選衣物可從服裝抽屜底部重新開啟顏色視窗</li>
-    </ul>
+    <!-- 人物設定 -->
+    <section class="help-panel" data-help-panel="character" role="tabpanel" hidden>
+      <h3>💇 髮型這樣玩</h3>
+      <ul>
+        <li>髮型類（長度／髮質／瀏海／造型／髮飾）都是<b>單選</b>，重選自動替換，不怕互相打架</li>
+        <li>選擇髮型長度時會跳出 🎨 <b>髮色視窗</b>；選擇髮質捲度、瀏海或造型則不會打斷操作。挑基本色 → 想要漸層或雙色？再挑一個第二色，工具會自動寫成 <code>pink to blue gradient hair</code> 這種漂亮句子！</li>
+        <li>想反悔？髮型抽屜底部的「🎨 髮色細節」按鈕隨時重開</li>
+      </ul>
 
-    <h3>✨ 小撇步</h3>
-    <ul>
-      <li>上方的彩色小膠囊點一下 ＝ 移除那個詞</li>
-      <li>提示詞中的彩色英文可以點擊修改；修改過的詞會在膠囊左側顯示 ✏️</li>
-      <li>按「➕ 新增自訂詞」可加入多個珊瑚橘色自訂詞；每個自訂詞都會顯示自己的標籤</li>
-      <li>自訂詞標籤會使用你輸入的文字，點一下標籤即可移除該詞</li>
-      <li>按住自訂框或左側 ⠿ 拖曳把手，就能把該詞移到任意逗號後方</li>
-      <li>🗑 清空一鍵重來；🌙／☀️ 切換深淺色</li>
-      <li>你的選擇會自動記住，關掉網頁再開也還在！</li>
-    </ul>
+      <h3>👁 異色瞳這樣選</h3>
+      <ul>
+        <li>先在「眼睛」分類選擇<b>異色瞳</b>，接著於視窗分別挑第一色與第二色</li>
+        <li>工具會自動組成 <code>heterochromia eyes, one eye black, one eye gold</code> 這類完整提示詞</li>
+        <li>想換色時，可用眼睛抽屜底部的「👁 異色瞳細節」隨時重開</li>
+      </ul>
+
+      <h3>👗 服裝分組挑選</h3>
+      <ul>
+        <li>服裝分成 👕 上衣／👖 下著／👗 連身服／🥼 外袍制服四個<b>收合小組</b>，點小組標題展開，其餘會自動收合</li>
+        <li>選擇襯衫、連身裙、毛衣、褲子等通用衣物時，會自動開啟 🎨 <b>顏色選單</b>；已選衣物可從服裝抽屜底部重新開啟</li>
+      </ul>
+
+      <h3>👓 配件與隨身道具</h3>
+      <ul>
+        <li>「配件」分類收錄領帶、眼鏡、墨鏡、護目鏡、拖鞋；其中<b>領帶</b>一樣可換色</li>
+        <li>進入「隨身道具」按<b>手持某個物品</b>，就能從彈窗挑選，重選會自動替換</li>
+      </ul>
+    </section>
+
+    <!-- 進階技巧 -->
+    <section class="help-panel" data-help-panel="tips" role="tabpanel" hidden>
+      <h3>✨ 小撇步</h3>
+      <ul>
+        <li>上方的彩色小膠囊點一下 ＝ 移除那個詞</li>
+        <li>提示詞中的彩色英文可以點擊修改；修改過的詞會在膠囊左側顯示 ✏️</li>
+        <li>按「➕ 新增自訂詞」可加入多個珊瑚橘色自訂詞；每個自訂詞都會顯示自己的標籤</li>
+        <li>自訂詞標籤會使用你輸入的文字，點一下標籤即可移除該詞</li>
+        <li>按住自訂框或左側 ⠿ 拖曳把手，就能把該詞移到任意逗號後方</li>
+        <li>🗑 清空一鍵重來；🌙／☀️ 切換深淺色</li>
+        <li>你的選擇會自動記住，關掉網頁再開也還在！</li>
+      </ul>
+    </section>
 
     <div class="modal-actions">
       <button class="btn btn-copy" id="helpClose" type="button">開始使用 ✨</button>
@@ -122,7 +143,7 @@
 
 <script src="js/profile-defaults.js?v=20260723c"></script>
 <script src="js/config.js?v=20260721c"></script>
-<script src="js/prompts.js?v=20260725b"></script>
-<script src="js/app.js?v=20260725b"></script>
+<script src="js/prompts.js?v=20260725c"></script>
+<script src="js/app.js?v=20260725c"></script>
 </body>
 </html>
