@@ -199,12 +199,14 @@
             id: item.id,
             text: item.text.replace(/\s+/g, " ").trim(),
             anchor: validCustomAnchor(item.anchor) ? item.anchor : "end"
-          }));
+          }))
+          .filter(item => item.text); // 丟掉空白詞，避免載入時殘留空輸入框
       }
     } catch { /* 改用舊版單一自訂詞資料 */ }
 
-    const legacyText = localStorage.getItem(CUSTOM_TEXT_KEY);
-    return [createCustomWord(legacyText || "", loadLegacyCustomAnchor())];
+    // 只有真的有舊版自訂文字才 migrate；否則從 0 個開始（靠 ➕ 新增）
+    const legacyText = (localStorage.getItem(CUSTOM_TEXT_KEY) || "").replace(/\s+/g, " ").trim();
+    return legacyText ? [createCustomWord(legacyText, loadLegacyCustomAnchor())] : [];
   }
 
   function loadPromptOverrides() {
@@ -304,7 +306,8 @@
     return eyeColorWords.some(word => word.slug === slug && wordVisible(word));
   }
   if (!validEyeColor(eyeFirst)) eyeFirst = "";
-  if (!validEyeColor(eyeSecond) || eyeSecond === eyeFirst) eyeSecond = "";
+  // 沒有第一色時第二色無意義，一併清掉，避免出現「眼睛2」孤兒膠囊
+  if (!validEyeColor(eyeSecond) || !eyeFirst || eyeSecond === eyeFirst) eyeSecond = "";
   if (!selected.includes(HETERO_SLUG)) {
     eyeFirst = "";
     eyeSecond = "";
@@ -341,6 +344,7 @@
   const ITEM_CAT = PROMPT_DATA.find(c => c.picker === "item");
   let clothingColors = loadClothingColors();
   let activeClothingSlug = "";
+  let openClothingSub = "top"; // 服裝抽屜手風琴：目前展開的小組 key（"" = 全收合）
 
   function loadClothingColors() {
     try {
@@ -829,6 +833,8 @@
         : "✋ 手持某個物品";
       openBtn.addEventListener("click", openItemModal);
       optionDrawer.appendChild(openBtn);
+    } else if (cat.subgroups) {
+      buildSubgroupAccordion(cat);
     } else {
       optionDrawer.appendChild(buildWordList(cat.words.filter(wordVisible)));
     }
@@ -859,17 +865,55 @@
       optionDrawer.appendChild(openBtn);
     }
 
-    if (cat.category === "服裝") {
-      selected.filter(slug => wordIndex[slug].colorable).forEach(slug => {
-        const color = clothingColor(slug);
-        const openBtn = document.createElement("button");
-        openBtn.className = "hair-color-open";
-        openBtn.type = "button";
-        openBtn.textContent = `🎨 ${wordIndex[slug].zh}顏色（${color?.zh || "未選色"}）`;
-        openBtn.addEventListener("click", () => openClothingModal(slug));
-        optionDrawer.appendChild(openBtn);
+    // 目前分類中已選的 colorable 詞：底部提供重開顏色視窗的按鈕（服裝、配件的領帶皆適用）
+    selected.filter(slug => wordIndex[slug].colorable && wordIndex[slug].category === cat.category).forEach(slug => {
+      const color = clothingColor(slug);
+      const openBtn = document.createElement("button");
+      openBtn.className = "hair-color-open";
+      openBtn.type = "button";
+      openBtn.textContent = `🎨 ${wordIndex[slug].zh}顏色（${color?.zh || "未選色"}）`;
+      openBtn.addEventListener("click", () => openClothingModal(slug));
+      optionDrawer.appendChild(openBtn);
+    });
+  }
+
+  // 有 subgroups 的分類（服裝）：抽屜內以手風琴收合小組呈現，一次只展開一組
+  function buildSubgroupAccordion(cat) {
+    cat.subgroups.forEach(sg => {
+      const words = cat.words.filter(w => w.sub === sg.key && wordVisible(w));
+      if (!words.length) return; // 依性別過濾後該組無詞 → 整組隱藏
+      const collapsed = openClothingSub !== sg.key;
+      const count = selected.filter(s =>
+        wordIndex[s].category === cat.category && wordIndex[s].sub === sg.key).length;
+
+      const groupEl = document.createElement("div");
+      groupEl.className = "cat-group sub-group" + (collapsed ? " collapsed" : "");
+
+      const header = document.createElement("button");
+      header.className = "group-header";
+      header.type = "button";
+      header.innerHTML =
+        `<span class="sub-icon">${sg.icon}</span><span class="sub-name">${sg.zh}</span>` +
+        `<span class="sub-count${count ? " show" : ""}">${count}</span>` +
+        `<span class="arrow">▾</span>`;
+      // 手風琴：點收合中的組 → 展開它（其餘自動收合）；點展開中的組 → 收合
+      header.addEventListener("click", () => {
+        openClothingSub = collapsed ? sg.key : "";
+        renderDrawer();
+        renderCategoryState();
       });
-    }
+      groupEl.appendChild(header);
+
+      const bodyWrap = document.createElement("div");
+      bodyWrap.className = "group-body-wrap";
+      const body = document.createElement("div");
+      body.className = "group-body";
+      body.appendChild(buildWordList(words));
+      bodyWrap.appendChild(body);
+      groupEl.appendChild(bodyWrap);
+
+      optionDrawer.appendChild(groupEl);
+    });
   }
 
   /* ===== 髮色細節彈出視窗 ===== */
@@ -1861,7 +1905,10 @@
       const parts = [];
       HAIR_CATS.forEach(c => {
         if (c === "髮色") parts.push(...hairColorParts());
-        else byCat(c).forEach(s => parts.push({ text: resolveEn(wordIndex[s].en), hue: wordIndex[s].hue }));
+        else byCat(c).forEach(s => parts.push(editableToken(resolveEn(wordIndex[s].en), `word:${s}`, {
+          hue: wordIndex[s].hue,
+          sourceSlugs: [s]
+        })));
       });
       byCat("眼睛").forEach(s => {
         if (s === HETERO_SLUG) parts.push(heterochromiaPart());
@@ -1884,6 +1931,7 @@
         plain(", wearing ");
         clothes.forEach((s, i) => { if (i) plain(" and "); word(s); });
       }
+      byCat("配件").forEach(s => { plain(", "); word(s); });
       byCat("動作姿勢").forEach(s => { plain(", "); word(s); });
       byCat("隨身道具").forEach(s => { plain(", "); word(s); });
     }
