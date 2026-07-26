@@ -1109,6 +1109,166 @@ body {
   display: none;
 }
 
+/* ===== 自填詞記憶庫彈窗 ===== */
+.custom-library-btn { color: var(--profile); }
+.custom-library-btn:hover { background: var(--profile-soft); }
+
+.library-modal { width: min(560px, 100%); }
+.library-search-row { margin: 4px 0 10px; }
+.library-search-input {
+  width: 100%;
+  border: 1px solid var(--word-border);
+  border-radius: 9px;
+  background: var(--word-bg);
+  color: var(--text);
+  padding: 8px 10px;
+}
+.library-cat-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.library-cat-chip {
+  border: 1px solid var(--word-border);
+  border-radius: 999px;
+  background: var(--word-bg);
+  color: var(--text);
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  line-height: 1.3;
+}
+.library-cat-chip.active {
+  border-color: var(--profile);
+  background: var(--profile-soft);
+  color: var(--profile);
+  font-weight: 700;
+}
+.library-cat-chip-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--word-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.library-cat-chip-wrap.active {
+  border-color: var(--profile);
+  background: var(--profile-soft);
+}
+.library-cat-chip-wrap .library-cat-chip-label {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.library-cat-chip-wrap.active .library-cat-chip-label { color: var(--profile); font-weight: 700; }
+.library-cat-edit,
+.library-cat-del {
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 5px 7px;
+  font-size: 0.72rem;
+  line-height: 1;
+}
+.library-cat-del:hover { color: var(--danger); }
+.library-cat-edit:hover { color: var(--profile); }
+.library-cat-add {
+  border-style: dashed;
+  color: var(--profile);
+  border-color: var(--profile);
+}
+.library-cat-add-input {
+  border-radius: 999px !important;
+  padding: 5px 12px !important;
+  max-width: 140px;
+}
+
+.library-list {
+  display: grid;
+  gap: 6px;
+  max-height: 46vh;
+  max-height: 46dvh;
+  overflow-y: auto;
+}
+.library-item-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.library-item-btn,
+.library-fav-btn,
+.library-pin-btn,
+.library-rename-btn,
+.library-delete-btn {
+  border: 1px solid var(--word-border);
+  border-radius: 9px;
+  background: var(--word-bg);
+  color: var(--text);
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.library-item-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.library-item-btn:hover { border-color: var(--custom); color: var(--custom); }
+.library-item-btn.has-alias {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  white-space: normal;
+}
+.library-item-name,
+.library-item-sub {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.library-item-name { font-weight: 700; }
+.library-item-sub { font-size: 0.7rem; opacity: 0.6; }
+.library-rename-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid var(--profile);
+  border-radius: 9px;
+  background: var(--word-bg);
+  color: var(--text);
+  padding: 8px 10px;
+}
+.library-fav-btn,
+.library-pin-btn,
+.library-rename-btn {
+  flex: 0 0 34px;
+  padding: 8px 6px;
+  text-align: center;
+  line-height: 1;
+}
+.library-fav-btn.active { color: var(--profile-gold); border-color: var(--profile-gold); }
+.library-pin-btn.active { color: var(--profile); border-color: var(--profile); background: var(--profile-soft); }
+.library-move-select {
+  flex: 0 0 auto;
+  max-width: 92px;
+  border: 1px solid var(--word-border);
+  border-radius: 9px;
+  background: var(--word-bg);
+  color: var(--text);
+  padding: 7px 6px;
+  cursor: pointer;
+}
+.library-delete-btn { flex: 0 0 38px; color: var(--danger); text-align: center; }
+.library-empty-msg { margin: 8px 2px; color: var(--text-dim); font-size: 0.82rem; }
+.library-empty-msg[hidden] { display: none; }
+
 /* ===== 手機版（直向堆疊）===== */
 @media (max-width: 720px) {
   body { padding: 8px; }

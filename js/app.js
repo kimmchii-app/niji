@@ -4,6 +4,8 @@
   const CUSTOM_TEXT_KEY = "niji-custom-prompt";
   const CUSTOM_POSITION_KEY = "niji-custom-position";
   const CUSTOM_WORDS_KEY = "niji-custom-words";
+  const WORD_LIBRARY_KEY = "niji-word-library";       // 自填詞記憶庫詞條
+  const LIBRARY_CATS_KEY = "niji-word-library-cats";  // 記憶庫自訂分類
   const PROMPT_OVERRIDES_KEY = "niji-prompt-overrides";
   const SLIDE_INTERVAL = 5000; // 自動切換間隔（毫秒）
 
@@ -52,6 +54,11 @@
   let activeCustomId = customWords[0]?.id || "";
   let pendingCustomFocusId = "";
   let promptOverrides = loadPromptOverrides();
+  // 自填詞記憶庫（持久化，獨立於工作區的 customWords）
+  let wordLibrary = loadWordLibrary();
+  let libraryCats = loadLibraryCats();
+  let librarySearchQuery = ""; // modal 內搜尋字串（僅記憶體）
+  let libraryActiveCat = "all"; // "all" | "fav" | "" (未分類) | 分類id
 
   const PROFILE_CODES_KEY = "niji-profile-codes";
   const SELECTED_PROFILE_KEY = "niji-selected-profile";
@@ -223,6 +230,40 @@
   function savePromptEditing() {
     localStorage.setItem(CUSTOM_WORDS_KEY, JSON.stringify(customWords));
     localStorage.setItem(PROMPT_OVERRIDES_KEY, JSON.stringify(promptOverrides));
+  }
+
+  function loadWordLibrary() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(WORD_LIBRARY_KEY) || "[]");
+      if (!Array.isArray(raw)) return [];
+      return raw
+        .filter(item => item && typeof item.id === "string" && typeof item.text === "string")
+        .map(item => ({
+          id: item.id,
+          text: item.text.replace(/\s+/g, " ").trim(),
+          alias: typeof item.alias === "string" ? item.alias : "",
+          cat: typeof item.cat === "string" ? item.cat : "",
+          fav: !!item.fav,
+          pin: !!item.pin,
+          ts: typeof item.ts === "number" ? item.ts : 0
+        }))
+        .filter(item => item.text);
+    } catch { return []; }
+  }
+
+  function loadLibraryCats() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(LIBRARY_CATS_KEY) || "[]");
+      if (!Array.isArray(raw)) return [];
+      return raw
+        .filter(cat => cat && typeof cat.id === "string" && typeof cat.name === "string" && cat.name.trim())
+        .map(cat => ({ id: cat.id, name: cat.name.trim() }));
+    } catch { return []; }
+  }
+
+  function saveLibrary() {
+    localStorage.setItem(WORD_LIBRARY_KEY, JSON.stringify(wordLibrary));
+    localStorage.setItem(LIBRARY_CATS_KEY, JSON.stringify(libraryCats));
   }
 
   function clearOverride(key) {
@@ -1249,6 +1290,339 @@
     activeClothingSlug = "";
   }
 
+  /* ===== 自填詞記憶庫 ===== */
+  const libraryModalBackdrop = document.createElement("div");
+  libraryModalBackdrop.className = "modal-backdrop";
+  libraryModalBackdrop.hidden = true;
+  document.body.appendChild(libraryModalBackdrop);
+  libraryModalBackdrop.addEventListener("click", e => {
+    if (e.target === libraryModalBackdrop) closeLibraryModal();
+  });
+
+  function createLibraryItem(text) {
+    return {
+      id: `lib-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      text, alias: "", cat: "", fav: false, pin: false, ts: Date.now()
+    };
+  }
+
+  // 自填詞離開輸入框時呼叫：以文字去重（不分大小寫），沒收錄過才新增
+  function recordToLibrary(rawText) {
+    const text = String(rawText || "").replace(/\s+/g, " ").trim();
+    if (!text) return;
+    const existing = wordLibrary.find(item => item.text.toLowerCase() === text.toLowerCase());
+    if (existing) { existing.ts = Date.now(); saveLibrary(); return; }
+    wordLibrary.push(createLibraryItem(text));
+    saveLibrary();
+  }
+
+  // 從記憶庫把詞加回工作區（比照 addCustomWord）
+  function insertLibraryWord(item) {
+    const word = createCustomWord(item.text, "end");
+    customWords.push(word);
+    activeCustomId = word.id;
+    savePromptEditing();
+    render();
+    showToast("已加入自訂詞");
+  }
+
+  function openLibraryModal() {
+    libraryModalBackdrop.hidden = false;
+    buildLibraryModal();
+  }
+
+  function closeLibraryModal() {
+    libraryModalBackdrop.hidden = true;
+  }
+
+  // 建立 modal 外殼（含持久的搜尋輸入框）；分類列與清單由 renderLibraryList 填入
+  function buildLibraryModal() {
+    libraryModalBackdrop.innerHTML = "";
+    const panel = document.createElement("div");
+    panel.className = "hair-modal library-modal";
+
+    const title = document.createElement("p");
+    title.className = "drawer-title";
+    title.textContent = "📚 自填詞記憶庫";
+    panel.appendChild(title);
+
+    const sub = document.createElement("p");
+    sub.className = "modal-sub";
+    sub.textContent = "點詞即可加回工作區；輸入過的自填詞會自動收錄";
+    panel.appendChild(sub);
+
+    const searchRow = document.createElement("div");
+    searchRow.className = "library-search-row";
+    const searchInput = document.createElement("input");
+    searchInput.className = "library-search-input";
+    searchInput.type = "text";
+    searchInput.placeholder = "搜尋文字或別名";
+    searchInput.setAttribute("aria-label", "搜尋記憶庫");
+    searchInput.value = librarySearchQuery;
+    searchInput.addEventListener("input", () => {
+      librarySearchQuery = searchInput.value;
+      renderLibraryList();
+    });
+    searchRow.appendChild(searchInput);
+    panel.appendChild(searchRow);
+
+    const catBar = document.createElement("div");
+    catBar.className = "library-cat-bar";
+    panel.appendChild(catBar);
+
+    const list = document.createElement("div");
+    list.className = "library-list";
+    panel.appendChild(list);
+
+    const emptyMsg = document.createElement("p");
+    emptyMsg.className = "library-empty-msg";
+    emptyMsg.textContent = "還沒有自填詞，先在上方輸入自訂詞就會自動收錄 ✨";
+    emptyMsg.hidden = true;
+    panel.appendChild(emptyMsg);
+
+    const actions = document.createElement("div");
+    actions.className = "modal-actions";
+    const done = document.createElement("button");
+    done.className = "btn btn-copy";
+    done.type = "button";
+    done.textContent = "完成 ✓";
+    done.addEventListener("click", closeLibraryModal);
+    actions.appendChild(done);
+    panel.appendChild(actions);
+
+    libraryModalBackdrop.appendChild(panel);
+    renderLibraryList();
+  }
+
+  // 只重繪分類列與清單（保留搜尋輸入框焦點）
+  function renderLibraryList() {
+    const catBar = libraryModalBackdrop.querySelector(".library-cat-bar");
+    const list = libraryModalBackdrop.querySelector(".library-list");
+    const emptyMsg = libraryModalBackdrop.querySelector(".library-empty-msg");
+    if (!catBar || !list) return;
+
+    // 分類列：全部 / ★收藏 / 各自訂分類 / 未分類 / ＋新增分類
+    catBar.innerHTML = "";
+    const makeChip = (key, label) => {
+      const chip = document.createElement("button");
+      chip.className = "library-cat-chip";
+      chip.type = "button";
+      chip.textContent = label;
+      chip.classList.toggle("active", libraryActiveCat === key);
+      chip.addEventListener("click", () => { libraryActiveCat = key; renderLibraryList(); });
+      return chip;
+    };
+    catBar.appendChild(makeChip("all", "全部"));
+    catBar.appendChild(makeChip("fav", "★收藏"));
+    libraryCats.forEach(cat => {
+      const wrap = document.createElement("span");
+      wrap.className = "library-cat-chip-wrap";
+      wrap.classList.toggle("active", libraryActiveCat === cat.id);
+      const chip = makeChip(cat.id, cat.name);
+      chip.classList.add("library-cat-chip-label");
+      const edit = document.createElement("button");
+      edit.className = "library-cat-edit";
+      edit.type = "button";
+      edit.textContent = "✎";
+      edit.title = `重新命名分類「${cat.name}」`;
+      edit.addEventListener("click", e => { e.stopPropagation(); startCatRename(wrap, chip, cat); });
+      const del = document.createElement("button");
+      del.className = "library-cat-del";
+      del.type = "button";
+      del.textContent = "✕";
+      del.title = `刪除分類「${cat.name}」（詞條移回未分類）`;
+      del.addEventListener("click", e => {
+        e.stopPropagation();
+        wordLibrary.forEach(item => { if (item.cat === cat.id) item.cat = ""; });
+        libraryCats = libraryCats.filter(c => c.id !== cat.id);
+        if (libraryActiveCat === cat.id) libraryActiveCat = "all";
+        saveLibrary();
+        renderLibraryList();
+      });
+      wrap.append(chip, edit, del);
+      catBar.appendChild(wrap);
+    });
+    catBar.appendChild(makeChip("", "未分類"));
+    const addCat = document.createElement("button");
+    addCat.className = "library-cat-chip library-cat-add";
+    addCat.type = "button";
+    addCat.textContent = "＋ 新增分類";
+    addCat.addEventListener("click", () => startAddCategory(addCat));
+    catBar.appendChild(addCat);
+
+    // 清單：依分類 + 搜尋過濾，置頂浮頂、其餘依時間新→舊
+    const q = librarySearchQuery.trim().toLowerCase();
+    const items = wordLibrary
+      .filter(item => {
+        const matchText = !q || item.text.toLowerCase().includes(q) || (item.alias && item.alias.toLowerCase().includes(q));
+        let matchCat;
+        if (libraryActiveCat === "all") matchCat = true;
+        else if (libraryActiveCat === "fav") matchCat = item.fav;
+        else matchCat = item.cat === libraryActiveCat;
+        return matchText && matchCat;
+      })
+      .sort((a, b) => (Number(b.pin) - Number(a.pin)) || (b.ts - a.ts));
+
+    list.innerHTML = "";
+    emptyMsg.hidden = items.length > 0;
+    items.forEach(item => list.appendChild(buildLibraryRow(item)));
+  }
+
+  function buildLibraryRow(item) {
+    const row = document.createElement("div");
+    row.className = "library-item-row";
+
+    const main = document.createElement("button");
+    main.className = "library-item-btn";
+    main.type = "button";
+    main.title = "點擊加回工作區";
+    if (item.alias) {
+      main.classList.add("has-alias");
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "library-item-name";
+      nameSpan.textContent = item.alias;
+      const subSpan = document.createElement("span");
+      subSpan.className = "library-item-sub";
+      subSpan.textContent = item.text;
+      main.append(nameSpan, subSpan);
+    } else {
+      main.textContent = item.text;
+    }
+    main.addEventListener("click", () => insertLibraryWord(item));
+
+    const fav = document.createElement("button");
+    fav.className = "library-fav-btn";
+    fav.type = "button";
+    fav.classList.toggle("active", item.fav);
+    fav.textContent = item.fav ? "★" : "☆";
+    fav.title = item.fav ? "取消收藏" : "收藏";
+    fav.addEventListener("click", () => { item.fav = !item.fav; saveLibrary(); renderLibraryList(); });
+
+    const pin = document.createElement("button");
+    pin.className = "library-pin-btn";
+    pin.type = "button";
+    pin.classList.toggle("active", item.pin);
+    pin.textContent = "📌";
+    pin.title = item.pin ? "取消置頂" : "置頂";
+    pin.addEventListener("click", () => { item.pin = !item.pin; saveLibrary(); renderLibraryList(); });
+
+    const rename = document.createElement("button");
+    rename.className = "library-rename-btn";
+    rename.type = "button";
+    rename.textContent = "✏️";
+    rename.title = "設定別名";
+    rename.addEventListener("click", () => startItemRename(row, main, item));
+
+    const move = document.createElement("select");
+    move.className = "library-move-select";
+    move.title = "移動到分類";
+    move.setAttribute("aria-label", "移動到分類");
+    const optUncat = document.createElement("option");
+    optUncat.value = "";
+    optUncat.textContent = "未分類";
+    move.appendChild(optUncat);
+    libraryCats.forEach(cat => {
+      const opt = document.createElement("option");
+      opt.value = cat.id;
+      opt.textContent = cat.name;
+      move.appendChild(opt);
+    });
+    move.value = item.cat || "";
+    move.addEventListener("change", () => { item.cat = move.value; saveLibrary(); renderLibraryList(); });
+
+    const del = document.createElement("button");
+    del.className = "library-delete-btn";
+    del.type = "button";
+    del.textContent = "×";
+    del.title = "從記憶庫刪除";
+    del.addEventListener("click", () => {
+      wordLibrary = wordLibrary.filter(i => i.id !== item.id);
+      saveLibrary();
+      renderLibraryList();
+    });
+
+    row.append(main, fav, pin, rename, move, del);
+    return row;
+  }
+
+  // 就地改別名（把主按鈕換成輸入框，Enter/失焦存、Esc 取消）
+  function startItemRename(row, mainBtn, item) {
+    const input = document.createElement("input");
+    input.className = "library-rename-input";
+    input.type = "text";
+    input.value = item.alias || "";
+    input.placeholder = item.text;
+    input.setAttribute("aria-label", "設定別名");
+    let done = false;
+    const finish = save => {
+      if (done) return;
+      done = true;
+      if (save) { item.alias = input.value.trim(); saveLibrary(); }
+      renderLibraryList();
+    };
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") { e.preventDefault(); finish(true); }
+      else if (e.key === "Escape") { e.preventDefault(); finish(false); }
+    });
+    input.addEventListener("blur", () => finish(true));
+    row.replaceChild(input, mainBtn);
+    input.focus();
+    input.select();
+  }
+
+  function startCatRename(wrap, chip, cat) {
+    const input = document.createElement("input");
+    input.className = "library-rename-input";
+    input.type = "text";
+    input.value = cat.name;
+    input.setAttribute("aria-label", "重新命名分類");
+    let done = false;
+    const finish = save => {
+      if (done) return;
+      done = true;
+      if (save) { const v = input.value.trim(); if (v) { cat.name = v; saveLibrary(); } }
+      renderLibraryList();
+    };
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") { e.preventDefault(); finish(true); }
+      else if (e.key === "Escape") { e.preventDefault(); finish(false); }
+    });
+    input.addEventListener("blur", () => finish(true));
+    input.addEventListener("click", e => e.stopPropagation());
+    wrap.replaceChild(input, chip);
+    input.focus();
+    input.select();
+  }
+
+  function startAddCategory(addChip) {
+    const input = document.createElement("input");
+    input.className = "library-rename-input library-cat-add-input";
+    input.type = "text";
+    input.placeholder = "分類名稱";
+    input.setAttribute("aria-label", "新增分類名稱");
+    let done = false;
+    const finish = save => {
+      if (done) return;
+      done = true;
+      if (save) {
+        const v = input.value.trim();
+        if (v) {
+          const cat = { id: `cat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, name: v };
+          libraryCats.push(cat);
+          saveLibrary();
+        }
+      }
+      renderLibraryList();
+    };
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") { e.preventDefault(); finish(true); }
+      else if (e.key === "Escape") { e.preventDefault(); finish(false); }
+    });
+    input.addEventListener("blur", () => finish(true));
+    addChip.replaceWith(input);
+    input.focus();
+  }
+
   function renderCategoryState() {
     document.querySelectorAll(".group-tab").forEach(tab => {
       tab.classList.toggle("active", tab.dataset.workspace === activeWorkspace);
@@ -1525,6 +1899,7 @@
       word.text = span.textContent.replace(/\s+/g, " ").trim();
       span.textContent = word.text;
       savePromptEditing();
+      recordToLibrary(word.text); // 自填詞離開輸入框即自動收錄進記憶庫
       updateCustomChip(word);
       syncCustomSeparators();
       updateCurrentPrompt();
@@ -2081,6 +2456,7 @@
 
   /* ===== 複製 / 清空 ===== */
   document.getElementById("addCustomBtn").addEventListener("click", addCustomWord);
+  document.getElementById("libraryBtn").addEventListener("click", openLibraryModal);
 
   copyBtn.addEventListener("click", async () => {
     const text = currentPrompt.trim();
