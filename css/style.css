@@ -810,7 +810,7 @@ body {
 /* ===== 頁籤式分類導覽 ===== */
 .group-tabs {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
   min-width: 0;
 }
@@ -1108,6 +1108,94 @@ body {
 .profile-empty-msg[hidden] {
   display: none;
 }
+
+/* ===== 人設庫 ===== */
+.persona-panel { overflow: visible; }
+.persona-add-form {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+.persona-name-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid var(--word-border);
+  border-radius: 9px;
+  background: var(--word-bg);
+  color: var(--text);
+  padding: 8px 10px;
+  font: inherit;
+}
+.persona-name-input:focus {
+  outline: none;
+  border-color: var(--profile);
+  box-shadow: 0 0 0 2px var(--profile-soft);
+}
+.persona-add-btn { flex: 0 0 auto; background: var(--profile); white-space: nowrap; }
+.persona-hint {
+  margin: 4px 2px 8px;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
+.persona-list {
+  display: grid;
+  gap: 6px;
+  max-height: 52vh;
+  max-height: 52dvh;
+  overflow-y: auto;
+}
+.persona-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.persona-item-btn,
+.persona-rename-btn,
+.persona-delete-btn {
+  border: 1px solid var(--word-border);
+  border-radius: 9px;
+  background: var(--word-bg);
+  color: var(--text);
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.persona-item-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  overflow: hidden;
+}
+.persona-item-btn:hover { border-color: var(--profile); color: var(--profile); }
+.persona-item-name {
+  font-weight: 700;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.persona-item-sub { font-size: 0.7rem; opacity: 0.6; }
+.persona-rename-btn {
+  flex: 0 0 34px;
+  padding: 8px 6px;
+  text-align: center;
+  line-height: 1;
+}
+.persona-delete-btn { flex: 0 0 38px; color: var(--danger); text-align: center; }
+.persona-rename-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid var(--profile);
+  border-radius: 9px;
+  background: var(--word-bg);
+  color: var(--text);
+  padding: 8px 10px;
+}
+.persona-empty-msg { margin: 8px 2px; color: var(--text-dim); font-size: 0.82rem; }
+.persona-empty-msg[hidden] { display: none; }
 
 /* ===== 自填詞記憶庫彈窗 ===== */
 .custom-library-btn { color: var(--profile); }
