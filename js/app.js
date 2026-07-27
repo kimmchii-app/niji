@@ -90,6 +90,9 @@
   let favoriteProfiles = loadArrayKey(FAVORITE_PROFILES_KEY);
   let pinnedProfiles = loadArrayKey(PINNED_PROFILES_KEY);
   let profileAliases = loadAliasMap(); // { code: 自訂顯示名稱 }
+  // 內建預設顯示名稱（來自 profile-defaults.js）；使用者自訂別名優先，其次才用預設
+  const DEFAULT_ALIASES = (typeof DEFAULT_PROFILE_ALIASES === "object" && DEFAULT_PROFILE_ALIASES) ? DEFAULT_PROFILE_ALIASES : {};
+  const aliasOf = code => profileAliases[code] || DEFAULT_ALIASES[code] || "";
   // Profile 篩選/搜尋（僅存於記憶體，不持久化）
   let profileSearchOpen = false;
   let profileSearchQuery = "";
@@ -598,7 +601,7 @@
         const input = document.createElement("input");
         input.className = "profile-rename-input";
         input.type = "text";
-        input.value = profileAliases[code] || "";
+        input.value = aliasOf(code);
         input.placeholder = code;
         input.setAttribute("aria-label", `重新命名 ${code}`);
         let done = false;
@@ -624,7 +627,7 @@
       };
 
       const buildCodeRow = (code, isDefault) => {
-        const alias = profileAliases[code] || "";
+        const alias = aliasOf(code);
         const row = document.createElement("div");
         row.className = "profile-code-row";
         row.classList.toggle("is-default", isDefault);
@@ -2357,7 +2360,7 @@
     const MAX = 30;
     const out = [];
     for (const code of codes) {
-      const zh = profileAliases[code] || code;
+      const zh = aliasOf(code) || code;
       for (let i = 0; i <= MAX; i++) {
         const candidates = i === 0
           ? [`profile-images/${code}.png`]
