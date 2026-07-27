@@ -6,6 +6,7 @@
   const CUSTOM_WORDS_KEY = "niji-custom-words";
   const WORD_LIBRARY_KEY = "niji-word-library";       // 自填詞記憶庫詞條
   const LIBRARY_CATS_KEY = "niji-word-library-cats";  // 記憶庫自訂分類
+  const PERSONA_LIBRARY_KEY = "niji-persona-library"; // 人設庫（角色設定的存檔）
   const PROMPT_OVERRIDES_KEY = "niji-prompt-overrides";
   const SLIDE_INTERVAL = 5000; // 自動切換間隔（毫秒）
 
@@ -423,13 +424,131 @@
     return resolveEn(color ? `${color.en} ${word.en}` : word.en);
   }
 
+  /* ===== 人設庫（只存「角色設定」群組的存檔） ===== */
+  // 「服裝」「配件」比照氛圍/場景詞：套用人設時不清空、也不納入人設（跟著使用者保留）
+  const PERSONA_KEEP_CATS = ["服裝", "配件"];
+  // 角色設定群組判斷：性別＋此群組的詞（髮型/眼睛/表情…）才會被人設納入；服裝配件除外
+  function isCharSlug(slug) {
+    const w = wordIndex[slug];
+    return !!w && PROMPT_DATA[w.catIdx].group === "角色設定" && !PERSONA_KEEP_CATS.includes(w.category);
+  }
+
+  function loadPersonaLibrary() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(PERSONA_LIBRARY_KEY) || "[]");
+      if (!Array.isArray(raw)) return [];
+      const validColorBase = s => s && wordIndex[s] && wordIndex[s].catDetail && !wordIndex[s].effect;
+      const validEye = s => eyeColorWords.some(w => w.slug === s);
+      return raw
+        .filter(p => p && typeof p.id === "string" && typeof p.name === "string")
+        .map(p => {
+          const slugs = Array.isArray(p.slugs) ? p.slugs.filter(isCharSlug) : [];
+          const clothingColors = {};
+          if (p.clothingColors && typeof p.clothingColors === "object") {
+            Object.entries(p.clothingColors).forEach(([slug, color]) => {
+              if (slugs.includes(slug) && wordIndex[slug]?.colorable && CLOTHING_COLORS.some(c => c.key === color)) clothingColors[slug] = color;
+            });
+          }
+          const overrides = {};
+          if (p.overrides && typeof p.overrides === "object") {
+            Object.entries(p.overrides).forEach(([key, val]) => {
+              if (typeof val === "string" && val.trim() &&
+                (key === "hair-color" || key === "eye-color" || key.startsWith("gender:") ||
+                  (key.startsWith("word:") && slugs.includes(key.slice(5))))) overrides[key] = val;
+            });
+          }
+          const hasHetero = slugs.includes(HETERO_SLUG);
+          return {
+            id: p.id,
+            name: p.name.trim() || "未命名人設",
+            gender: GENDERS.some(g => g.key === p.gender) ? p.gender : "",
+            slugs,
+            hairSecond: validColorBase(p.hairSecond) ? p.hairSecond : "",
+            eyeFirst: hasHetero && validEye(p.eyeFirst) ? p.eyeFirst : "",
+            eyeSecond: hasHetero && validEye(p.eyeSecond) ? p.eyeSecond : "",
+            clothingColors,
+            overrides,
+            ts: typeof p.ts === "number" ? p.ts : 0
+          };
+        });
+    } catch { return []; }
+  }
+
+  function savePersonaLibrary() {
+    localStorage.setItem(PERSONA_LIBRARY_KEY, JSON.stringify(personaLibrary));
+  }
+
+  // 擷取目前的角色設定為一筆人設（性別＋角色群組詞＋髮色/異色瞳/衣物顏色＋相關覆寫）
+  function captureCurrentPersona(name) {
+    const slugs = selected.filter(isCharSlug);
+    if (!slugs.length && !selectedGender) { showToast("目前沒有角色設定可存"); return null; }
+    const cc = {};
+    slugs.forEach(s => { if (wordIndex[s].colorable && clothingColors[s]) cc[s] = clothingColors[s]; });
+    const ov = {};
+    Object.entries(promptOverrides).forEach(([key, val]) => {
+      if (key === "hair-color" || key === "eye-color" ||
+        (selectedGender && key === `gender:${selectedGender}`) ||
+        (key.startsWith("word:") && slugs.includes(key.slice(5)))) ov[key] = val;
+    });
+    const persona = {
+      id: `persona-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      name: String(name || "").trim() || `人設 ${personaLibrary.length + 1}`,
+      gender: selectedGender,
+      slugs,
+      hairSecond, // 直接存目前第二色，load/normalize 會驗證
+      eyeFirst: selected.includes(HETERO_SLUG) ? eyeFirst : "",
+      eyeSecond: selected.includes(HETERO_SLUG) ? eyeSecond : "",
+      clothingColors: cc,
+      overrides: ov,
+      ts: Date.now()
+    };
+    personaLibrary.push(persona);
+    savePersonaLibrary();
+    return persona;
+  }
+
+  // 套用人設：只換角色（清掉目前角色群組詞＋性別＋角色細節），保留畫面/背景/自訂詞/profile/niji
+  function applyPersona(persona) {
+    const removed = selected.filter(isCharSlug);
+    removed.forEach(s => { clearOverridesForSlug(s); delete clothingColors[s]; });
+    selected = selected.filter(s => !isCharSlug(s));
+    clearEyeColors();
+    setHairSecond("");
+    setGender("");
+
+    setGender(persona.gender);
+    persona.slugs.forEach(s => { if (wordIndex[s] && !selected.includes(s)) selected.push(s); });
+    Object.entries(persona.clothingColors).forEach(([s, c]) => {
+      if (selected.includes(s) && wordIndex[s]?.colorable) clothingColors[s] = c;
+    });
+    const hasHetero = selected.includes(HETERO_SLUG);
+    hairSecond = persona.hairSecond || "";
+    localStorage.setItem(HAIR_SECOND_KEY, hairSecond);
+    eyeFirst = hasHetero ? (persona.eyeFirst || "") : "";
+    eyeSecond = hasHetero ? (persona.eyeSecond || "") : "";
+    localStorage.setItem(EYE_FIRST_KEY, eyeFirst);
+    localStorage.setItem(EYE_SECOND_KEY, eyeSecond);
+    Object.assign(promptOverrides, persona.overrides); // 在 setGender 之後併入，避免被清掉
+
+    saveSelection();
+    saveClothingColors();
+    savePromptEditing();
+    normalizeHairSecond();
+    renderMainPanel();
+    render();
+    showToast(`已套用「${persona.name}」`);
+  }
+
+  let personaLibrary = loadPersonaLibrary();
+
   /* ===== 提示詞 / Profile 主頁籤 ===== */
   function buildCategories() {
     const tabs = document.createElement("div");
     tabs.className = "group-tabs";
     [
       { key: "prompt", label: "提示詞" },
-      { key: "profile", label: "profile" }
+      { key: "profile", label: "profile" },
+      { key: "persona", label: "人設庫" }
     ].forEach(item => {
       const tab = document.createElement("button");
       tab.className = "group-tab";
@@ -764,16 +883,129 @@
       applyProfileFilter();
     }
 
+    function buildPersonaPanel() {
+      panel.classList.add("persona-panel");
+
+      const form = document.createElement("form");
+      form.className = "persona-add-form";
+      const input = document.createElement("input");
+      input.className = "persona-name-input";
+      input.type = "text";
+      input.placeholder = "人設名稱（可留空自動命名）";
+      input.setAttribute("aria-label", "人設名稱");
+      const add = document.createElement("button");
+      add.className = "btn btn-copy persona-add-btn";
+      add.type = "submit";
+      add.textContent = "➕ 儲存目前角色";
+      form.append(input, add);
+      form.addEventListener("submit", e => {
+        e.preventDefault();
+        const p = captureCurrentPersona(input.value);
+        if (!p) return;
+        input.value = "";
+        renderMainPanel();
+        renderCategoryState();
+        showToast(`已儲存「${p.name}」`);
+      });
+      panel.appendChild(form);
+
+      const hint = document.createElement("p");
+      hint.className = "persona-hint";
+      hint.textContent = "存下性別與角色詞（髮型、眼睛、表情、動作…）；套用時只換角色，服裝配件與場景都會保留";
+      panel.appendChild(hint);
+
+      const list = document.createElement("div");
+      list.className = "persona-list";
+      panel.appendChild(list);
+
+      const empty = document.createElement("p");
+      empty.className = "persona-empty-msg";
+      empty.textContent = "還沒有人設，先選好角色再按上面「儲存目前角色」✨";
+      empty.hidden = personaLibrary.length > 0;
+      panel.appendChild(empty);
+
+      const startPersonaRename = (row, mainBtn, persona) => {
+        const rn = document.createElement("input");
+        rn.className = "persona-rename-input";
+        rn.type = "text";
+        rn.value = persona.name;
+        rn.setAttribute("aria-label", "重新命名人設");
+        let done = false;
+        const finish = save => {
+          if (done) return;
+          done = true;
+          if (save) { const v = rn.value.trim(); if (v) persona.name = v; savePersonaLibrary(); }
+          renderMainPanel();
+          renderCategoryState();
+        };
+        rn.addEventListener("keydown", ev => {
+          if (ev.key === "Enter") { ev.preventDefault(); finish(true); }
+          else if (ev.key === "Escape") { ev.preventDefault(); finish(false); }
+        });
+        rn.addEventListener("blur", () => finish(true));
+        row.replaceChild(rn, mainBtn);
+        rn.focus();
+        rn.select();
+      };
+
+      [...personaLibrary].sort((a, b) => b.ts - a.ts).forEach(persona => {
+        const row = document.createElement("div");
+        row.className = "persona-row";
+
+        const main = document.createElement("button");
+        main.className = "persona-item-btn";
+        main.type = "button";
+        main.title = "點擊套用（只換角色，保留場景）";
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "persona-item-name";
+        nameSpan.textContent = persona.name;
+        const g = GENDERS.find(x => x.key === persona.gender);
+        const subSpan = document.createElement("span");
+        subSpan.className = "persona-item-sub";
+        subSpan.textContent = `${g ? g.icon + " " : ""}${persona.slugs.length} 個角色詞`;
+        main.append(nameSpan, subSpan);
+        main.addEventListener("click", () => applyPersona(persona));
+
+        const rename = document.createElement("button");
+        rename.className = "persona-rename-btn";
+        rename.type = "button";
+        rename.textContent = "✏️";
+        rename.title = "重新命名";
+        rename.setAttribute("aria-label", `重新命名 ${persona.name}`);
+        rename.addEventListener("click", () => startPersonaRename(row, main, persona));
+
+        const del = document.createElement("button");
+        del.className = "persona-delete-btn";
+        del.type = "button";
+        del.textContent = "×";
+        del.title = "刪除人設";
+        del.setAttribute("aria-label", `刪除 ${persona.name}`);
+        del.addEventListener("click", () => {
+          personaLibrary = personaLibrary.filter(p => p.id !== persona.id);
+          savePersonaLibrary();
+          renderMainPanel();
+          renderCategoryState();
+        });
+
+        row.append(main, rename, del);
+        list.appendChild(row);
+      });
+    }
+
     renderMainPanel = () => {
       // 重建前記住 profile 清單的捲動位置，避免選/取消時跳回最上面
       const prevList = panel.querySelector(".profile-code-list");
       const prevScroll = prevList ? prevList.scrollTop : 0;
       panel.innerHTML = "";
-      panel.classList.remove("profile-panel");
+      panel.classList.remove("profile-panel", "persona-panel");
       if (activeWorkspace === "profile") {
         buildProfilePanel();
         const newList = panel.querySelector(".profile-code-list");
         if (newList) newList.scrollTop = prevScroll;
+        return;
+      }
+      if (activeWorkspace === "persona") {
+        buildPersonaPanel();
         return;
       }
 
@@ -855,7 +1087,7 @@
   }
 
   function renderDrawer() {
-    if (activeWorkspace === "profile") {
+    if (activeWorkspace === "profile" || activeWorkspace === "persona") {
       optionDrawer.hidden = true;
       return;
     }
@@ -1645,7 +1877,9 @@
     document.querySelectorAll(".gcount").forEach(badge => {
       const n = badge.dataset.workspace === "profile"
         ? selectedProfiles.length
-        : selected.length + Number(!!selectedGender);
+        : badge.dataset.workspace === "persona"
+          ? personaLibrary.length
+          : selected.length + Number(!!selectedGender);
       badge.textContent = n;
       badge.classList.toggle("show", n > 0);
     });
