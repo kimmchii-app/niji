@@ -2840,15 +2840,18 @@
   }
 
   // profile 示範圖：一個代碼可多張（base、(1)、(2)…連續、遇缺即停），依編號順序回傳
+  // 檔名帶 niji 版本後綴：{code}-n{版本}.png，版本依目前選的 niji 模式（未選預設 n7）
   async function probeProfileImages(codes) {
     const MAX = 30;
+    const ver = selectedNiji || "7";
     const out = [];
     for (const code of codes) {
       const zh = aliasOf(code) || code;
+      const stem = `profile-images/${code}-n${ver}`;
       for (let i = 0; i <= MAX; i++) {
         const candidates = i === 0
-          ? [`profile-images/${code}.png`]
-          : [`profile-images/${code}(${i}).png`, `profile-images/${code} (${i}).png`];
+          ? [`${stem}.png`]
+          : [`${stem}(${i}).png`, `${stem} (${i}).png`];
         let found = null;
         for (const src of candidates) {
           if (await probeImage(src)) { found = src; break; }
@@ -2889,8 +2892,9 @@
     if (!pool.length) {
       slideshow.hidden = true;
       galleryHint.style.display = "";
+      const ver = selectedNiji || "7";
       galleryHint.innerHTML =
-        `找不到這些 profile 的示範圖 🖼<br>把 <b>&lt;代碼&gt;.png</b> 放進 <b>profile-images/</b>`;
+        `找不到這些 profile 的示範圖 🖼<br>把 <b>&lt;代碼&gt;-n${ver}.png</b> 放進 <b>profile-images/</b>`;
       return;
     }
 
