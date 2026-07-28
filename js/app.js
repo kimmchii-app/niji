@@ -8,6 +8,7 @@
   const LIBRARY_CATS_KEY = "niji-word-library-cats";  // 記憶庫自訂分類
   const PERSONA_LIBRARY_KEY = "niji-persona-library"; // 人設庫（角色設定的存檔）
   const PROMPT_OVERRIDES_KEY = "niji-prompt-overrides";
+  const WORD_ORDER_KEY = "niji-word-order"; // 畫面設定/背景裝飾預設詞的手動排序
   const SLIDE_INTERVAL = 5000; // 自動切換間隔（毫秒）
 
   const chipsEl = document.getElementById("selectedChips");
@@ -43,6 +44,48 @@
     );
   }
 
+  const groupOfSlug = slug => PROMPT_DATA[wordIndex[slug].catIdx].group;
+  // 可手動拖曳排序的群組（純逗號並列，不影響人物自然語句）
+  const REORDER_GROUPS = ["畫面設定", "背景裝飾"];
+
+  function loadWordOrder() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(WORD_ORDER_KEY) || "[]");
+      return Array.isArray(raw) ? raw.filter(s => typeof s === "string" && wordIndex[s]) : [];
+    } catch { return []; }
+  }
+  function saveWordOrder() {
+    localStorage.setItem(WORD_ORDER_KEY, JSON.stringify(manualWordOrder));
+  }
+  // 依「手動排序優先，其次 niji 預設順序」排一個群組內的已選詞
+  function sortGroupSlugs(slugs) {
+    return [...slugs].sort((a, b) => {
+      const ia = manualWordOrder.indexOf(a);
+      const ib = manualWordOrder.indexOf(b);
+      const ra = ia < 0 ? Infinity : ia;
+      const rb = ib < 0 ? Infinity : ib;
+      if (ra !== rb) return ra - rb;
+      return (wordIndex[a].catIdx - wordIndex[b].catIdx) || (wordIndex[a].wIdx - wordIndex[b].wIdx);
+    });
+  }
+  // 把某群組的預設詞移到新位置（targetIndex = 插入到群組第幾個之前）
+  function reorderPresetWord(slug, group, targetIndex) {
+    const source = group === "畫面設定" ? currentBigSlugs : currentTailSlugs;
+    const list = [...source];
+    const from = list.indexOf(slug);
+    if (from < 0) return;
+    list.splice(from, 1);
+    let ins = from < targetIndex ? targetIndex - 1 : targetIndex;
+    ins = Math.max(0, Math.min(ins, list.length));
+    list.splice(ins, 0, slug);
+    // 重寫手動排序：移除本群組舊有 slug，再依新順序寫入
+    const groupSet = new Set(source);
+    manualWordOrder = manualWordOrder.filter(s => !groupSet.has(s));
+    manualWordOrder.push(...list);
+    saveWordOrder();
+    render();
+  }
+
   // 已選詞（依點選順序）
   let selected = loadSelection();
   let activeCategory = PROMPT_DATA[0].category;
@@ -51,6 +94,9 @@
   let currentPrompt = ""; // 複製用的純文字提示詞
   let currentBasePrompt = "";
   let currentPromptTokens = [];
+  let manualWordOrder = loadWordOrder();
+  let currentBigSlugs = [];  // 目前畫面設定群組的顯示順序（拖曳排序用）
+  let currentTailSlugs = []; // 目前背景裝飾群組的顯示順序
   let customWords = loadCustomWords();
   let activeCustomId = customWords[0]?.id || "";
   let pendingCustomFocusId = "";
@@ -2358,17 +2404,72 @@
     if (baseAfter && group.length) promptText.appendChild(buildAutoSeparator(anchor, "after"));
   }
 
+  // 預設詞排序：群組內的插入點（拖曳時才顯示）
+  function buildWordDropZone(group, index) {
+    const zone = document.createElement("span");
+    zone.className = "word-drop-zone";
+    zone.dataset.wgroup = group;
+    zone.dataset.windex = String(index);
+    zone.setAttribute("aria-hidden", "true");
+    return zone;
+  }
+
+  // 按住 ⠿ 把手拖曳預設詞：只在同群組內的插入點放開才生效
+  function startWordDrag(handle, slug, group, e) {
+    if (e.button != null && e.button !== 0) return;
+    let dragging = false;
+    let activeZone = null;
+    let lastX = e.clientX, lastY = e.clientY;
+    const findZone = () => {
+      const hit = document.elementFromPoint(lastX, lastY)?.closest(".word-drop-zone");
+      const zone = hit && hit.dataset.wgroup === group ? hit : null;
+      if (activeZone !== zone) {
+        activeZone?.classList.remove("drop-active");
+        activeZone = zone;
+        activeZone?.classList.add("drop-active");
+      }
+    };
+    const timer = setTimeout(() => {
+      dragging = true;
+      promptText.classList.add("word-dragging");
+      promptText.querySelectorAll(`.word-drop-zone[data-wgroup="${group}"]`)
+        .forEach(z => z.classList.add("zone-live"));
+      handle.closest(".pw-reorder-wrap")?.classList.add("dragging");
+      findZone();
+    }, 220);
+    const move = ev => {
+      lastX = ev.clientX; lastY = ev.clientY;
+      if (dragging) { ev.preventDefault(); findZone(); }
+    };
+    const finish = () => {
+      clearTimeout(timer);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
+      promptText.classList.remove("word-dragging");
+      promptText.querySelectorAll(".word-drop-zone.zone-live").forEach(z => z.classList.remove("zone-live"));
+      handle.closest(".pw-reorder-wrap")?.classList.remove("dragging");
+      const target = activeZone;
+      activeZone?.classList.remove("drop-active");
+      if (dragging && target) reorderPresetWord(slug, group, Number(target.dataset.windex));
+    };
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", finish, { once: true });
+    window.addEventListener("pointercancel", finish, { once: true });
+  }
+
   /* ===== 畫面更新 ===== */
   function render() {
     renderDrawer(); // 選詞會影響髮色細節區的展開/收起，重繪抽屜
     renderCategoryState();
 
-    // 選中詞 chips（依 niji 7 順序排列、以分類色區分；性別 chip 排在人物詞最前）
-    const ordered = sortForPrompt(selected);
-    const groupOf = slug => PROMPT_DATA[wordIndex[slug].catIdx].group;
-    const bigSlugs = ordered.filter(s => groupOf(s) === "畫面設定");
-    const charSlugs = ordered.filter(s => groupOf(s) === "角色設定");
-    const tailSlugs = ordered.filter(s => groupOf(s) === "背景裝飾");
+    // 選中詞 chips（畫面設定/背景裝飾依手動排序、人物段依 niji 7 順序；性別 chip 排在人物詞最前）
+    const groupOf = groupOfSlug;
+    const bigSlugs = sortGroupSlugs(selected.filter(s => groupOf(s) === "畫面設定"));
+    const charSlugs = sortForPrompt(selected.filter(s => groupOf(s) === "角色設定"));
+    const tailSlugs = sortGroupSlugs(selected.filter(s => groupOf(s) === "背景裝飾"));
+    currentBigSlugs = bigSlugs;
+    currentTailSlugs = tailSlugs;
     const gender = GENDERS.find(g => g.key === selectedGender);
     const tokens = buildPromptTokens(bigSlugs, charSlugs, tailSlugs, gender);
     const modifiedSlugs = new Set();
@@ -2482,6 +2583,16 @@
     currentBasePrompt = tokens.map(t => t.text).join("");
     updateCurrentPrompt();
     promptText.innerHTML = "";
+    // 此 token 是否為可拖曳排序的預設詞：回傳 { group, idx, len } 或 null
+    const reorderInfo = t => {
+      if (!t.sourceSlugs || t.sourceSlugs.length !== 1) return null;
+      const slug = t.sourceSlugs[0];
+      if (!wordIndex[slug] || !REORDER_GROUPS.includes(groupOf(slug))) return null;
+      const list = groupOf(slug) === "畫面設定" ? bigSlugs : tailSlugs;
+      const idx = list.indexOf(slug);
+      return idx >= 0 && list.length >= 2 ? { slug, group: groupOf(slug), idx, len: list.length } : null;
+    };
+
     const appendToken = t => {
       if (t.hue != null || t.isGender) {
         const span = document.createElement("span");
@@ -2497,7 +2608,27 @@
             startTokenEdit(span, t);
           }
         });
-        promptText.appendChild(span);
+        const ri = reorderInfo(t);
+        if (ri) {
+          if (ri.idx === 0) promptText.appendChild(buildWordDropZone(ri.group, 0));
+          const wrap = document.createElement("span");
+          wrap.className = "pw-reorder-wrap";
+          const handle = document.createElement("span");
+          handle.className = "word-drag-handle";
+          handle.textContent = "⠿";
+          handle.title = "按住拖曳，調整這個詞的位置";
+          handle.setAttribute("aria-label", "拖曳排序");
+          handle.addEventListener("pointerdown", e => {
+            e.preventDefault();
+            e.stopPropagation();
+            startWordDrag(handle, ri.slug, ri.group, e);
+          });
+          wrap.append(handle, span);
+          promptText.appendChild(wrap);
+          promptText.appendChild(buildWordDropZone(ri.group, ri.idx + 1));
+        } else {
+          promptText.appendChild(span);
+        }
       } else {
         promptText.appendChild(document.createTextNode(t.text));
       }
@@ -2833,6 +2964,8 @@
     if (!selected.length && !selectedGender && !hairSecond && !customWords.length && !selectedProfiles.length && !selectedNiji && !Object.keys(promptOverrides).length) return;
     selected = [];
     promptOverrides = {};
+    manualWordOrder = [];
+    saveWordOrder();
     customWords = [];
     activeCustomId = "";
     clothingColors = {};

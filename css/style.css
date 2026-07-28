@@ -338,6 +338,43 @@ body {
   background: var(--custom);
   box-shadow: 0 0 0 2px var(--custom-soft);
 }
+
+/* 預設詞拖曳排序：⠿ 把手 + 群組內插入點 */
+.prompt-text .pw-reorder-wrap { white-space: nowrap; }
+.prompt-text .word-drag-handle {
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  opacity: 0.4;
+  font-size: 0.9em;
+  padding: 0 1px;
+  vertical-align: middle;
+}
+.prompt-text .word-drag-handle:hover { opacity: 0.85; }
+.prompt-text .word-drag-handle:active { cursor: grabbing; }
+.prompt-text .pw-reorder-wrap.dragging { opacity: 0.5; }
+.prompt-text .pw-reorder-wrap.dragging .word-drag-handle { cursor: grabbing; }
+.word-drop-zone {
+  display: inline-block;
+  width: 0;
+  height: 1.35em;
+  overflow: hidden;
+  vertical-align: middle;
+  pointer-events: none;
+  transition: width 0.12s, margin 0.12s;
+}
+.prompt-text.word-dragging .word-drop-zone.zone-live {
+  width: 14px;
+  margin: 0 2px;
+  border: 1px dashed var(--accent-strong);
+  border-radius: 4px;
+  background: var(--accent-soft);
+  pointer-events: auto;
+}
+.prompt-text.word-dragging .word-drop-zone.zone-live.drop-active {
+  background: var(--accent-strong);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
 .prompt-actions { display: flex; align-items: stretch; gap: 8px; }
 .custom-position-toggle {
   display: inline-flex;
