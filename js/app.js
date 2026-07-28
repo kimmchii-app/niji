@@ -387,6 +387,7 @@
   const CLOTHING_COLOR_KEY = "niji-clothing-colors";
   const CLOTHING_CAT = PROMPT_DATA.find(c => c.category === "服裝");
   const ITEM_CAT = PROMPT_DATA.find(c => c.picker === "item");
+  const ANIMAL_EARS_CAT = PROMPT_DATA.find(c => c.picker === "animalEars");
   let clothingColors = loadClothingColors();
   let activeClothingSlug = "";
   let openClothingSub = "top"; // 服裝抽屜手風琴：目前展開的小組 key（"" = 全收合）
@@ -1109,6 +1110,17 @@
         : "✋ 手持某個物品";
       openBtn.addEventListener("click", openItemModal);
       optionDrawer.appendChild(openBtn);
+    } else if (cat.picker === "animalEars") {
+      const chosen = selected.find(slug => wordIndex[slug].category === cat.category);
+      const color = chosen ? clothingColor(chosen) : null;
+      const openBtn = document.createElement("button");
+      openBtn.className = "hair-color-open";
+      openBtn.type = "button";
+      openBtn.textContent = chosen
+        ? `🐱 動物耳朵（${color ? color.zh : ""}${wordIndex[chosen].zh}）`
+        : "🐱 選擇動物耳朵";
+      openBtn.addEventListener("click", openAnimalEarsModal);
+      optionDrawer.appendChild(openBtn);
     } else if (cat.subgroups) {
       buildSubgroupAccordion(cat);
     } else {
@@ -1142,7 +1154,8 @@
     }
 
     // 目前分類中已選的 colorable 詞：底部提供重開顏色視窗的按鈕（服裝、配件的領帶皆適用）
-    selected.filter(slug => wordIndex[slug].colorable && wordIndex[slug].category === cat.category).forEach(slug => {
+    // 動物耳朵的顏色改由自己的彈窗處理，故此處排除
+    selected.filter(slug => wordIndex[slug].colorable && wordIndex[slug].category === cat.category && cat.category !== "動物耳朵").forEach(slug => {
       const color = clothingColor(slug);
       const openBtn = document.createElement("button");
       openBtn.className = "hair-color-open";
@@ -1523,6 +1536,107 @@
   function closeClothingModal() {
     clothingModalBackdrop.hidden = true;
     activeClothingSlug = "";
+  }
+
+  /* ===== 動物耳朵彈出視窗（種類 + 耳朵顏色） ===== */
+  const animalEarsModalBackdrop = document.createElement("div");
+  animalEarsModalBackdrop.className = "modal-backdrop";
+  animalEarsModalBackdrop.hidden = true;
+  document.body.appendChild(animalEarsModalBackdrop);
+  animalEarsModalBackdrop.addEventListener("click", e => {
+    if (e.target === animalEarsModalBackdrop) closeAnimalEarsModal();
+  });
+
+  // 目前選中的動物耳朵種類（單選）
+  function currentAnimalEar() {
+    return selected.find(s => wordIndex[s].category === "動物耳朵") || "";
+  }
+
+  function openAnimalEarsModal() {
+    animalEarsModalBackdrop.hidden = false;
+    animalEarsModalBackdrop.innerHTML = "";
+    const panel = document.createElement("div");
+    panel.className = "hair-modal animal-ears-modal";
+
+    const title = document.createElement("p");
+    title.className = "drawer-title";
+    title.textContent = "🐱 動物耳朵";
+    panel.appendChild(title);
+
+    const sub = document.createElement("p");
+    sub.className = "modal-sub";
+    sub.textContent = "選擇動物種類與耳朵顏色；種類重選會自動替換";
+    panel.appendChild(sub);
+
+    const kindTitle = document.createElement("p");
+    kindTitle.className = "drawer-title";
+    kindTitle.textContent = "🐾 種類（單選）";
+    panel.appendChild(kindTitle);
+    panel.appendChild(buildWordList(ANIMAL_EARS_CAT.words.filter(wordVisible), slug => {
+      toggleWord(slug);
+      updateAnimalEarsModal();
+    }));
+
+    const colorTitle = document.createElement("p");
+    colorTitle.className = "drawer-title";
+    colorTitle.textContent = "🎨 耳朵顏色（單選，可不選）";
+    panel.appendChild(colorTitle);
+    const colorHint = document.createElement("p");
+    colorHint.className = "modal-sub animal-ears-color-hint";
+    colorHint.textContent = "先選種類，才能挑顏色";
+    panel.appendChild(colorHint);
+    const colorList = document.createElement("div");
+    colorList.className = "word-list animal-ears-color-list";
+    CLOTHING_COLORS.forEach(color => {
+      const btn = document.createElement("button");
+      btn.className = "word-btn";
+      btn.type = "button";
+      btn.textContent = color.zh;
+      btn.dataset.earColor = color.key;
+      btn.addEventListener("click", () => {
+        const chosen = currentAnimalEar();
+        if (!chosen) return;
+        // 再點同色 = 取消上色
+        setClothingColor(chosen, clothingColors[chosen] === color.key ? "" : color.key);
+        render();
+        updateAnimalEarsModal();
+      });
+      colorList.appendChild(btn);
+    });
+    panel.appendChild(colorList);
+
+    const actions = document.createElement("div");
+    actions.className = "modal-actions";
+    const done = document.createElement("button");
+    done.className = "btn btn-copy";
+    done.type = "button";
+    done.textContent = "完成 ✓";
+    done.addEventListener("click", closeAnimalEarsModal);
+    actions.appendChild(done);
+    panel.appendChild(actions);
+
+    animalEarsModalBackdrop.appendChild(panel);
+    updateAnimalEarsModal();
+  }
+
+  function updateAnimalEarsModal() {
+    if (animalEarsModalBackdrop.hidden) return;
+    const chosen = currentAnimalEar();
+    animalEarsModalBackdrop.querySelectorAll(".word-btn[data-slug]").forEach(btn => {
+      btn.classList.toggle("active", selected.includes(btn.dataset.slug));
+    });
+    const hint = animalEarsModalBackdrop.querySelector(".animal-ears-color-hint");
+    const colorList = animalEarsModalBackdrop.querySelector(".animal-ears-color-list");
+    if (hint) hint.hidden = !!chosen;
+    if (colorList) colorList.hidden = !chosen;
+    const cur = chosen ? clothingColors[chosen] || "" : "";
+    animalEarsModalBackdrop.querySelectorAll("[data-ear-color]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.earColor === cur);
+    });
+  }
+
+  function closeAnimalEarsModal() {
+    animalEarsModalBackdrop.hidden = true;
   }
 
   /* ===== 自填詞記憶庫 ===== */
@@ -1931,7 +2045,7 @@
     // 只有選中髮型長度時自動彈出髮色細節視窗
     if (idx < 0 && HAIR_MODAL_TRIGGER_CATS.includes(w.category)) openHairModal();
     if (idx < 0 && w.heterochromia) openEyeModal();
-    if (idx < 0 && w.colorable) openClothingModal(slug);
+    if (idx < 0 && w.colorable && w.category !== "動物耳朵") openClothingModal(slug);
   }
 
   function loadSelection() {
@@ -2536,6 +2650,8 @@
           tokens.push(p);
         });
       }
+      byCat("動物耳朵").forEach(s => { plain(", "); word(s); });
+      byCat("臉部五官").forEach(s => { plain(", "); word(s); });
       byCat("氣質特質").forEach(s => { plain(", "); word(s); });
       byCat("表情").forEach(s => { plain(", "); word(s); });
       const clothes = byCat("服裝");
