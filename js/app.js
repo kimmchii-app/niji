@@ -471,13 +471,16 @@
     return resolveEn(color ? `${color.en} ${word.en}` : word.en);
   }
 
-  /* ===== 人設庫（只存「角色設定」群組的存檔） ===== */
-  // 「服裝」「配件」比照氛圍/場景詞：套用人設時不清空、也不納入人設（跟著使用者保留）
-  const PERSONA_KEEP_CATS = ["服裝", "配件"];
-  // 角色設定群組判斷：性別＋此群組的詞（髮型/眼睛/表情…）才會被人設納入；服裝配件除外
+  /* ===== 人設庫（只存指定的外觀分類） ===== */
+  // 人設只納入這些分類（＋性別另外處理）：髮型各類、髮色、眼睛、動物耳朵。
+  // 其餘（臉部五官、氣質特質、表情、動作姿勢、隨身道具、服裝、配件）不存、套用時保留。
+  const PERSONA_CATS = [
+    "髮型長度", "髮質捲度", "瀏海", "髮型造型", "髮飾", "臉部毛髮",
+    "髮色", "眼睛", "動物耳朵"
+  ];
   function isCharSlug(slug) {
     const w = wordIndex[slug];
-    return !!w && PROMPT_DATA[w.catIdx].group === "角色設定" && !PERSONA_KEEP_CATS.includes(w.category);
+    return !!w && PERSONA_CATS.includes(w.category);
   }
 
   function loadPersonaLibrary() {
@@ -958,7 +961,7 @@
 
       const hint = document.createElement("p");
       hint.className = "persona-hint";
-      hint.textContent = "存下性別與角色詞（髮型、眼睛、表情、動作…）；套用時只換角色，服裝配件與場景都會保留";
+      hint.textContent = "存下性別、髮型、髮色、眼睛/異色瞳、動物耳朵；套用時只換這些，表情/動作/服裝/場景等都會保留";
       panel.appendChild(hint);
 
       const list = document.createElement("div");
