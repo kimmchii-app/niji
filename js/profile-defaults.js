@@ -182,5 +182,6 @@ const DEFAULT_PROFILE_ALIASES = {
     "broes8i": "moodboard broes8i",
     "dh3tl96": "moodboard dh3tl96",
     "ggzdqln": "moodboard ggzdqln",
-    "w23bn6e": "moodboard w23bn6e"
+    "w23bn6e": "moodboard w23bn6e",
+    "cxbyud6": "moodboard cxbyud6"
 };
