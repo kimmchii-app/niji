@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#1a2733">
 <title>Niji 提示詞配搭工具</title>
-<link rel="stylesheet" href="css/style.css?v=20260728a">
+<link rel="stylesheet" href="css/style.css?v=20260729a">
 </head>
 <body>
 
@@ -45,6 +45,7 @@
 
   <!-- 右側：圖片輪播區 -->
   <section class="gallery-panel" id="galleryPanel">
+    <p class="gallery-warning">⚠️ 所有圖片皆以 stylize 500 輸出，所有 p 值結果皆有可能因提示詞與 stylize 影響輸出</p>
     <p class="gallery-hint" id="galleryHint">選擇 profile 代碼後，這裡會輪播對應的示範圖</p>
     <div class="slideshow" id="slideshow" hidden>
       <figure class="slide-stage">
@@ -74,7 +75,7 @@
 
     <!-- 快速上手 -->
     <section class="help-panel" data-help-panel="start" role="tabpanel">
-      <p>這裡是 niji 7 的題詞小幫手，只要選好中文標籤就可以請 niji 幫你生成照片！</p>
+      <p>這裡是 niji 6 / 7 的題詞小幫手，只要選好中文標籤就可以請 niji 幫你生成照片！</p>
 
       <h3>🚀 三步驟上手</h3>
       <ol>
@@ -83,11 +84,21 @@
         <li><b>貼到 niji 上面就可以生成！</b></li>
       </ol>
 
-      <h3>🗂 兩個主頁籤</h3>
+      <h3>🗂 三個主頁籤</h3>
       <ul>
         <li>✨ <b>提示詞</b>：集中選擇畫面、人物與背景裝飾；人物可先選 👩 女性／👨 男性切換詞庫</li>
-        <li>🪪 <b>profile</b>：自行新增並可複選 Profile 代碼，選中的代碼會以 --profile 依序接在提示詞最後</li>
+        <li>🪪 <b>profile</b>：自行新增並可複選 Profile 代碼，選中的代碼會以 --profile 依序接在提示詞最後；可切換 <code>niji 6 / 7</code> 版本（niji 6 模式只顯示 niji 6 代碼）</li>
+        <li>🎭 <b>人設庫</b>：把角色外觀（性別、髮型、髮色、眼睛、動物耳朵）整組存檔，一鍵套用到不同場景，只換角色、其餘保留</li>
         <li>最終格式會是 <code>完整的背景與人物提示詞 --niji 版本 --p 代碼</code>（有選 niji 版本才會加 <code>--niji</code>）</li>
+      </ul>
+
+      <h3>🖼 profile 預覽圖</h3>
+      <ul>
+        <li>在 <b>profile</b> 分頁選取代碼後，右側會<b>輪播</b>該代碼的示範圖，可按 <b>⬅ 上一張／下一張 ➡</b> 切換，也會每幾秒自動換</li>
+        <li>一個代碼可能有多張（例如男生、女生各一張）</li>
+        <li>所有示範圖的提示詞都只有<b>性別＋代碼</b>，方便你看出這個 profile 本身的風格：<br>
+          <code>一個男性 --profile &lt;代碼&gt;</code> ／ <code>一個女性 --profile &lt;代碼&gt;</code></li>
+        <li>所有圖皆以 <code>--stylize 500</code> 輸出，實際結果仍會因提示詞與 stylize 而不同</li>
       </ul>
     </section>
 
@@ -130,6 +141,7 @@
         <li>你輸入過的自訂詞會自動存進「📚 記憶庫」；點開就能搜尋、分類、收藏★、置頂📌、改別名，一鍵把常用詞加回工作區</li>
         <li>自訂詞標籤會使用你輸入的文字，點一下標籤即可移除該詞</li>
         <li>按住自訂框或左側 ⠿ 拖曳把手，就能把該詞移到任意逗號後方</li>
+        <li><b>畫面設定／背景裝飾</b>的預設詞旁也有 ⠿ 把手，可拖曳調整前後順序（人物自然語句維持自動排序）</li>
         <li>🗑 清空一鍵重來；🌙／☀️ 切換深淺色</li>
         <li>你的選擇會自動記住，關掉網頁再開也還在！</li>
       </ul>
