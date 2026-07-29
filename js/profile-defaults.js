@@ -178,5 +178,9 @@ const DEFAULT_PROFILE_ALIASES = {
   "monqqde": "moodboard monqqde",
   "eyhyw2y": "moodboard eyhyw2y",
   "uu5k2dk": "moodboard uu5k2dk",
-  "82qdhmg": "moodboard 82qdhmg"
+  "82qdhmg": "moodboard 82qdhmg",
+    "broes8i": "moodboard broes8i",
+    "dh3tl96": "moodboard dh3tl96",
+    "ggzdqln": "moodboard ggzdqln",
+    "w23bn6e": "moodboard w23bn6e"
 };
