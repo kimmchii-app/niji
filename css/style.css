@@ -766,6 +766,16 @@ body {
   padding: 14px;
   min-height: 420px;
 }
+.gallery-warning {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
 .gallery-hint {
   color: var(--text-dim);
   text-align: center;
