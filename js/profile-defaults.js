@@ -60,7 +60,8 @@ const DEFAULT_PROFILE_CODES = [
   "qlqt2t8",
   "qxqw2b8",
   "w23bn6e",
-  "2i2czbx"
+  "2i2czbx",
+  "34pk9rm"
 ];
 
 // niji 6 專用預設 Profile 代碼（可用於 niji 6 與 niji 7；取得後貼入此陣列即可）

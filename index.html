@@ -5,14 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#1a2733">
 <title>Niji 提示詞配搭工具</title>
-<link rel="stylesheet" href="css/style.css?v=20260729a">
+<link rel="stylesheet" href="css/style.css?v=20260810a">
 </head>
 <body>
 
 <header class="app-header">
-  <button class="help-toggle" id="helpToggle" title="使用說明">？</button>
+  <div class="header-side">
+    <button class="header-btn help-toggle" id="helpToggle" title="使用說明">？</button>
+    <button class="header-btn log-toggle" id="logToggle" title="更新紀錄">📝</button>
+  </div>
   <h1>Niji 提示詞配搭工具</h1>
-  <button class="theme-toggle" id="themeToggle" title="切換深淺色主題">🌙</button>
+  <div class="header-side header-right">
+    <button class="header-btn theme-toggle" id="themeToggle" title="切換深淺色主題">🌙</button>
+  </div>
 </header>
 
 <!-- 選中詞的顯示區 -->
@@ -153,11 +158,24 @@
   </div>
 </div>
 
+<!-- 更新紀錄彈窗（內容來自 js/changelog.js） -->
+<div class="modal-backdrop" id="logModal" hidden>
+  <div class="hair-modal log-modal">
+    <h2>📝 更新紀錄</h2>
+    <p class="modal-sub">每次調整都會記在這裡，最新的排在最上面</p>
+    <div class="log-body" id="logBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-copy" id="logClose" type="button">知道了 ✓</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-<script src="js/profile-defaults.js?v=20260727c"></script>
+<script src="js/changelog.js?v=20260810a"></script>
+<script src="js/profile-defaults.js?v=20260810a"></script>
 <script src="js/config.js?v=20260721c"></script>
 <script src="js/prompts.js?v=20260728a"></script>
-<script src="js/app.js?v=20260728d"></script>
+<script src="js/app.js?v=20260810a"></script>
 </body>
 </html>

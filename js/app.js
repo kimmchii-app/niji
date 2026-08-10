@@ -3005,6 +3005,88 @@
     if (e.target === helpModal) helpModal.hidden = true;
   });
 
+  /* ===== 更新紀錄彈窗（內容來自 js/changelog.js） ===== */
+  const LOG_SEEN_KEY = "niji-changelog-seen"; // 記住看過的最新一筆日期，用來決定紅點
+  const logModal = document.getElementById("logModal");
+  const logBody = document.getElementById("logBody");
+  const logToggle = document.getElementById("logToggle");
+  const CHANGES = Array.isArray(typeof CHANGELOG !== "undefined" ? CHANGELOG : null) ? CHANGELOG : [];
+  // 判斷「有沒有新東西」的識別值：日期＋項目數，同一天補內容也會重新亮紅點
+  const latestLogId = CHANGES[0] ? `${CHANGES[0].date || ""}#${(CHANGES[0].items || []).length}` : "";
+
+  function buildChangelog() {
+    logBody.innerHTML = "";
+    if (!CHANGES.length) {
+      const empty = document.createElement("p");
+      empty.className = "log-empty-msg";
+      empty.textContent = "還沒有更新紀錄";
+      logBody.appendChild(empty);
+      return;
+    }
+    CHANGES.forEach((entry, index) => {
+      const section = document.createElement("section");
+      section.className = "log-entry";
+
+      const head = document.createElement("div");
+      head.className = "log-entry-head";
+      if (entry.date) {
+        const date = document.createElement("span");
+        date.className = "log-date";
+        date.textContent = entry.date;
+        head.appendChild(date);
+      }
+      if (entry.title) {
+        const title = document.createElement("span");
+        title.className = "log-title";
+        title.textContent = entry.title;
+        head.appendChild(title);
+      }
+      if (index === 0) {
+        const badge = document.createElement("span");
+        badge.className = "log-new-badge";
+        badge.textContent = "最新";
+        head.appendChild(badge);
+      }
+      section.appendChild(head);
+
+      const items = document.createElement("ul");
+      items.className = "log-items";
+      // items 元素可寫成字串，或 { type, text } 帶標籤
+      (Array.isArray(entry.items) ? entry.items : []).forEach(item => {
+        const type = typeof item === "string" ? "" : item?.type || "";
+        const text = typeof item === "string" ? item : item?.text || "";
+        if (!text) return;
+        const li = document.createElement("li");
+        if (type) {
+          const tag = document.createElement("span");
+          tag.className = "log-tag";
+          tag.dataset.type = type;
+          tag.textContent = type;
+          li.appendChild(tag);
+        }
+        li.appendChild(document.createTextNode(text));
+        items.appendChild(li);
+      });
+      section.appendChild(items);
+      logBody.appendChild(section);
+    });
+  }
+
+  function refreshLogDot() {
+    const seen = localStorage.getItem(LOG_SEEN_KEY) || "";
+    logToggle.classList.toggle("has-new", !!latestLogId && seen !== latestLogId);
+  }
+
+  logToggle.addEventListener("click", () => {
+    logModal.hidden = false;
+    if (latestLogId) localStorage.setItem(LOG_SEEN_KEY, latestLogId);
+    logToggle.classList.remove("has-new");
+  });
+  document.getElementById("logClose").addEventListener("click", () => { logModal.hidden = true; });
+  logModal.addEventListener("click", e => {
+    if (e.target === logModal) logModal.hidden = true;
+  });
+
   /* ===== 深淺色主題切換 ===== */
   const THEME_KEY = "niji-theme";
   const themeToggle = document.getElementById("themeToggle");
@@ -3034,5 +3116,7 @@
 
   /* ===== 啟動 ===== */
   buildCategories();
+  buildChangelog();
+  refreshLogDot();
   render();
 })();

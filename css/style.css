@@ -72,16 +72,17 @@ body {
 }
 
 /* ===== 標題 ===== */
+/* 三欄 grid：左按鈕組 ｜ 標題 ｜ 右按鈕組（左右各佔 1fr，標題永遠置中） */
 .app-header {
   border: 1px solid var(--panel-border);
   background: var(--panel);
   box-shadow: var(--shadow);
   border-radius: var(--radius);
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: center;
-  position: relative;
-  padding: 14px 56px;
+  gap: 8px;
+  padding: 14px 12px;
   margin-bottom: 12px;
 }
 .app-header h1 {
@@ -91,40 +92,43 @@ body {
   color: var(--accent-strong);
   text-align: center;
 }
-.theme-toggle {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  border: 1px solid var(--panel-border);
-  background: var(--panel-soft);
-  border-radius: 999px;
-  width: 40px;
-  height: 40px;
-  font-size: 1.15rem;
-  cursor: pointer;
-  transition: filter 0.15s;
+.header-side {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
-.theme-toggle:hover { filter: brightness(0.94); }
+.header-side.header-right { justify-content: flex-end; }
 
-/* 使用說明「？」按鈕（header 左側，與主題鈕對稱） */
-.help-toggle {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
+/* header 圓形小按鈕（？／📝／🌙 共用） */
+.header-btn {
+  position: relative;
+  flex: 0 0 auto;
   border: 1px solid var(--panel-border);
   background: var(--panel-soft);
-  color: var(--accent-strong);
+  color: var(--text);
   border-radius: 999px;
   width: 40px;
   height: 40px;
   font-size: 1.1rem;
-  font-weight: 700;
   cursor: pointer;
   transition: filter 0.15s;
 }
-.help-toggle:hover { filter: brightness(0.94); }
+.header-btn:hover { filter: brightness(0.94); }
+.help-toggle,
+.log-toggle { color: var(--accent-strong); font-weight: 700; }
+/* 有沒看過的新更新紀錄時，右上角亮一顆紅點 */
+.header-btn.has-new::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--custom);
+  border: 2px solid var(--panel);
+}
 
 /* ===== 選中詞的顯示區 ===== */
 .selected-area {
@@ -718,6 +722,66 @@ body {
 }
 .help-panel[hidden] { display: none; }
 .help-panel h3:first-child { margin-top: 4px; }
+
+/* ===== 更新紀錄彈窗 ===== */
+.log-modal { width: min(560px, 100%); font-size: 0.9rem; line-height: 1.65; }
+.log-modal h2 { font-size: 1.05rem; color: var(--accent-strong); margin-bottom: 6px; }
+.log-body { margin-top: 10px; }
+.log-entry { padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--panel-border); }
+.log-entry:first-child { padding-top: 0; margin-top: 0; border-top: 0; }
+.log-entry-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.log-date {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.log-title { font-weight: 700; color: var(--accent-strong); }
+.log-new-badge {
+  border: 1px solid var(--custom);
+  background: var(--custom-soft);
+  color: var(--custom);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.log-items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.log-items li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.86rem;
+}
+.log-items li::before {
+  content: "•";
+  color: var(--text-dim);
+  flex: 0 0 auto;
+}
+.log-tag {
+  flex: 0 0 auto;
+  border: 1px solid var(--text-dim);
+  color: var(--text-dim);
+  border-radius: 6px;
+  padding: 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+.log-tag[data-type="新增"] { border-color: var(--accent-strong); color: var(--accent-strong); background: var(--accent-soft); }
+.log-tag[data-type="修正"] { border-color: var(--danger); color: var(--danger); background: var(--danger-bg); }
+.log-tag[data-type="調整"] { border-color: var(--profile); color: var(--profile); background: var(--profile-soft); }
+.log-empty-msg { color: var(--text-dim); font-size: 0.85rem; }
 .word-btn {
   border: 1px solid var(--word-border);
   background: var(--word-bg);
@@ -1407,8 +1471,10 @@ body {
 /* ===== 手機版（直向堆疊）===== */
 @media (max-width: 720px) {
   body { padding: 8px; }
-  .app-header { padding: 12px 52px; }
-  .app-header h1 { font-size: 1.05rem; }
+  .app-header { padding: 10px 8px; gap: 6px; }
+  .app-header h1 { font-size: 1.05rem; letter-spacing: 1px; }
+  .header-btn { width: 34px; height: 34px; font-size: 1rem; }
+  .header-side { gap: 4px; }
 
   .layout {
     grid-template-columns: minmax(0, 1fr);
