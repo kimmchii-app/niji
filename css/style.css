@@ -781,6 +781,7 @@ body {
 .log-tag[data-type="新增"] { border-color: var(--accent-strong); color: var(--accent-strong); background: var(--accent-soft); }
 .log-tag[data-type="修正"] { border-color: var(--danger); color: var(--danger); background: var(--danger-bg); }
 .log-tag[data-type="調整"] { border-color: var(--profile); color: var(--profile); background: var(--profile-soft); }
+.log-tag[data-type="移除"] { border-color: var(--text-dim); color: var(--text-dim); background: var(--panel-soft); }
 .log-empty-msg { color: var(--text-dim); font-size: 0.85rem; }
 .word-btn {
   border: 1px solid var(--word-border);

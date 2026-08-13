@@ -720,6 +720,9 @@
       searchToggle.addEventListener("click", () => {
         profileSearchOpen = !profileSearchOpen;
         renderMainPanel();
+        // 只有「這一次按開」才把游標送進搜尋框；面板重建（選代碼、★、📌…）不該搶焦點
+        // 注意：renderMainPanel 會重建面板內容，要從 panel 重查新的 input
+        if (profileSearchOpen) panel.querySelector(".profile-search-input")?.focus();
       });
       toolbar.append(hint, searchToggle);
       panel.appendChild(toolbar);
@@ -750,7 +753,6 @@
       });
       searchPanel.append(searchInput, favFilter);
       panel.appendChild(searchPanel);
-      if (profileSearchOpen) setTimeout(() => searchInput.focus(), 0);
 
       // 📌 置頂的代碼浮到所屬區段頂端，段內維持原順序
       const sortSection = codes => {
@@ -784,6 +786,7 @@
             saveProfiles();
           }
           renderMainPanel();
+          render(); // 別名也會出現在示範圖說明，改完要立刻反映（探測結果有快取，不會多打請求）
         };
         input.addEventListener("keydown", e => {
           if (e.key === "Enter") { e.preventDefault(); finish(true); }
@@ -1046,12 +1049,20 @@
       // 重建前記住 profile 清單的捲動位置，避免選/取消時跳回最上面
       const prevList = panel.querySelector(".profile-code-list");
       const prevScroll = prevList ? prevList.scrollTop : 0;
+      // 同理記住焦點所在的按鈕（哪一列、哪一顆），否則整個面板重建後鍵盤焦點會掉回 body
+      const active = document.activeElement;
+      const focusCode = active?.closest?.(".profile-code-row")?.dataset.code || "";
+      const focusCls = focusCode ? [...active.classList].find(c => c.startsWith("profile-")) : "";
       panel.innerHTML = "";
       panel.classList.remove("profile-panel", "persona-panel");
       if (activeWorkspace === "profile") {
         buildProfilePanel();
         const newList = panel.querySelector(".profile-code-list");
         if (newList) newList.scrollTop = prevScroll;
+        if (focusCls) {
+          const row = [...panel.querySelectorAll(".profile-code-row")].find(r => r.dataset.code === focusCode);
+          row?.querySelector(`.${focusCls}`)?.focus({ preventScroll: true }); // preventScroll：捲動位置上面已還原，別再跳
+        }
         return;
       }
       if (activeWorkspace === "persona") {
@@ -2707,7 +2718,9 @@
       }
       const parts = [];
       if (base) parts.push(editableToken(resolveEn(wordIndex[base].en), `word:${base}`, { hue, sourceSlugs: [base] }));
-      parts.push(editableToken(resolveEn(fw.en), `word:${fx}`, { hue, sourceSlugs: [fx] }));
+      // 有 tpl 的效果詞（en 只是片語，如 highlights / dark roots）條件不足時不單獨輸出，
+      // 免得組出「short hair and highlights」這種沒有意義的句子；沒有 tpl 的（如 salt and pepper hair）本身即完整詞，照舊輸出
+      if (!fw.tpl) parts.push(editableToken(resolveEn(fw.en), `word:${fx}`, { hue, sourceSlugs: [fx] }));
       return parts;
     }
     return base ? [editableToken(resolveEn(wordIndex[base].en), `word:${base}`, { hue, sourceSlugs: [base] })] : [];
@@ -2839,27 +2852,39 @@
     });
   }
 
-  // profile 示範圖：一個代碼可多張（base、(1)、(2)…連續、遇缺即停），依編號順序回傳
+  // 探測結果快取："{代碼}-n{版本}" → 檔名陣列（空陣列＝已確認沒有圖），同一組不重複打請求
+  // 只快取檔名，顯示名稱另外算，這樣改別名才會立刻反映在說明文字上
+  const probeCache = new Map();
+
+  // 探測單一代碼的示範圖：base、(1)、(2)…連續編號，遇缺即停
+  async function probeCodeImages(code, ver) {
+    const cacheKey = `${code}-n${ver}`;
+    const cached = probeCache.get(cacheKey);
+    if (cached) return cached;
+    const MAX = 30;
+    const stem = `profile-images/${code}-n${ver}`;
+    const srcs = [];
+    for (let i = 0; i <= MAX; i++) {
+      const src = i === 0 ? `${stem}.png` : `${stem}(${i}).png`;
+      if (!await probeImage(src)) break;
+      srcs.push(src);
+    }
+    probeCache.set(cacheKey, srcs);
+    return srcs;
+  }
+
+  // profile 示範圖：各代碼並行探測（彼此不相依），再依代碼順序串成輪播清單
   // 檔名帶 niji 版本後綴：{code}-n{版本}.png，版本依目前選的 niji 模式（未選預設 n7）
   async function probeProfileImages(codes) {
-    const MAX = 30;
     const ver = selectedNiji || "7";
+    const lists = await Promise.all(codes.map(code => probeCodeImages(code, ver)));
     const out = [];
-    for (const code of codes) {
+    codes.forEach((code, ci) => {
       const zh = aliasOf(code) || code;
-      const stem = `profile-images/${code}-n${ver}`;
-      for (let i = 0; i <= MAX; i++) {
-        const candidates = i === 0
-          ? [`${stem}.png`]
-          : [`${stem}(${i}).png`, `${stem} (${i}).png`];
-        let found = null;
-        for (const src of candidates) {
-          if (await probeImage(src)) { found = src; break; }
-        }
-        if (!found) break; // 該編號兩種寫法都沒有 → 遇缺即停
-        out.push({ src: found, zh: out.filter(o => o.en === `--profile ${code}`).length ? `${zh} ${i + 1}` : zh, en: `--profile ${code}` });
-      }
-    }
+      lists[ci].forEach((src, i) => {
+        out.push({ src, zh: i ? `${zh} ${i + 1}` : zh, en: `--profile ${code}`, cacheKey: `${code}-n${ver}` });
+      });
+    });
     return out;
   }
 
@@ -2868,8 +2893,13 @@
   let slideIdx = 0;
   let slideTimer = null;
   let rebuildToken = 0;
+  let slideKey = null;  // 目前輪播對應的輸入（niji 版本＋已選代碼＋別名），一樣就不重建
 
   async function rebuildSlideshow() {
+    // 輪播內容只取決於這些；選詞、改自訂詞、拖曳排序都不該觸發重新探測
+    const key = `${selectedNiji || "7"}|${selectedProfiles.map(c => `${c}:${aliasOf(c)}`).join(" ")}`;
+    if (key === slideKey) return; // 注意：必須早於 stopTimer()，否則自動輪播會被停掉
+    slideKey = key;
     const token = ++rebuildToken;
     stopTimer();
     const keepSrc = pool[slideIdx] ? pool[slideIdx].src : null; // 記住目前這張，重建後盡量停在同一張
@@ -2916,11 +2946,13 @@
   // 圖片載入失敗（被移除或改名）時，從輪播池剔除並跳下一張
   slideImg.addEventListener("error", () => {
     if (!pool.length || slideshow.hidden) return;
+    probeCache.delete(pool[slideIdx].cacheKey); // 快取與實際檔案不符 → 讓這個代碼下次重新探測
     pool.splice(slideIdx, 1);
     if (!pool.length) {
       stopTimer();
       slideshow.hidden = true;
       galleryHint.style.display = "";
+      slideKey = null; // 池子空了，下次 render 重新探測並顯示正確的提示文字
       return;
     }
     showSlide(slideIdx);
@@ -3115,6 +3147,7 @@
   }
 
   /* ===== 啟動 ===== */
+  normalizeHairSecond(); // 清掉重整後殘留的孤兒第二色（效果詞已不在選取中時）
   buildCategories();
   buildChangelog();
   refreshLogDot();
