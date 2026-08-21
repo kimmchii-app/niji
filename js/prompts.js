@@ -36,7 +36,9 @@ const PROMPT_DATA = [
       { zh: "平滑粗描邊", en: "smooth bold outlines", slug: "bold-outlines" },
       { zh: "向量簡約感", en: "vector-like simplicity", slug: "vector-simplicity" },
       { zh: "優雅極簡", en: "elegant minimalism", slug: "elegant-minimalism" },
-      { zh: "雜誌編輯插畫", en: "editorial illustration", slug: "editorial-illustration" }
+      { zh: "雜誌編輯插畫", en: "editorial illustration", slug: "editorial-illustration" },
+      { zh: "可見筆觸", en: "visible brushstrokes", slug: "visible-brushstrokes" },
+      { zh: "柔和厚塗質感", en: "soft impasto texture", slug: "soft-impasto-texture" }
     ]
   },
   {
@@ -66,7 +68,9 @@ const PROMPT_DATA = [
       { zh: "明亮留白", en: "bright white negative space", slug: "bright-negative-space" },
       { zh: "大面積留白", en: "large open space", slug: "large-open-space" },
       { zh: "聚焦人物", en: "emphasis on the character", slug: "emphasis-character" },
-      { zh: "強烈動態感", en: "strong sense of movement", slug: "strong-movement" }
+      { zh: "強烈動態感", en: "strong sense of movement", slug: "strong-movement" },
+      { zh: "中遠景", en: "medium full shot", slug: "medium-full-shot" },
+      { zh: "日式屏風構圖", en: "classical Japanese screen painting composition", slug: "japanese-screen-composition" }
     ]
   },
   {
@@ -119,7 +123,8 @@ const PROMPT_DATA = [
       { zh: "明暗對比", en: "chiaroscuro", slug: "chiaroscuro" },
       { zh: "臉部聚光", en: "spotlight illuminating face", slug: "spotlight-on-face" },
       { zh: "柔和金光", en: "warm soft golden lighting", slug: "warm-golden-light" },
-      { zh: "戲劇性陰影", en: "atmospheric dramatic shadows", slug: "dramatic-shadows" }
+      { zh: "戲劇性陰影", en: "atmospheric dramatic shadows", slug: "dramatic-shadows" },
+      { zh: "溫暖琥珀光", en: "warm amber light", slug: "warm-amber-light" }
     ]
   },
   {
@@ -421,7 +426,9 @@ const PROMPT_DATA = [
       { zh: "耳際夾髮", en: "hair pinned behind ear", slug: "pinned-behind-ear", gender: "m" },
       { zh: "迷你帽", en: "mini hat", slug: "mini-hat", gender: "f" },
       { zh: "頭飾", en: "hair ornament", slug: "hair-ornament" },
-      { zh: "寬簷草帽", en: "wide-brim straw hat", slug: "wide-brim-straw-hat" }
+      { zh: "寬簷草帽", en: "wide-brim straw hat", slug: "wide-brim-straw-hat" },
+      { zh: "金珊瑚珠髮簪", en: "ornate golden kanzashi with red coral beads and dangling chains", slug: "golden-coral-kanzashi" },
+      { zh: "金鏈髮簪", en: "ornate golden kanzashi with dangling chains", slug: "golden-chain-kanzashi" }
     ]
   },
   {
@@ -556,7 +563,7 @@ const PROMPT_DATA = [
       { zh: "毛衣", en: "sweater", slug: "clothing-sweater", colorable: true, sub: "top" },
       { zh: "印花短袖襯衫", en: "printed short-sleeved shirt", slug: "printed-short-sleeved-shirt", sub: "top" },
       { zh: "深藍金邊襯衫", en: "deep blue shirt with gold trim", slug: "blue-gold-shirt", gender: "m", sub: "top" },
-      { zh: "休閒連帽衫", en: "casual hoodie", slug: "hoodie", sub: "top" },
+      { zh: "休閒連帽衫", en: "casual hoodie", slug: "hoodie", sub: "top", colorable: true },
       { zh: "黑色兜帽", en: "black hood", slug: "black-hood", sub: "top" },
       { zh: "蕾絲飾襟襯衫", en: "black jabot shirt with intricate lace detail", slug: "jabot-lace-shirt", sub: "top" },
       { zh: "白色絲質背心", en: "white silk vest", slug: "silk-vest", sub: "top" },
@@ -565,19 +572,20 @@ const PROMPT_DATA = [
       { zh: "長褲", en: "pants", slug: "clothing-pants", colorable: true, sub: "bottom" },
       { zh: "短褲", en: "shorts", slug: "clothing-shorts", colorable: true, sub: "bottom" },
       { zh: "西裝褲", en: "suit pants", slug: "clothing-suit-pants", colorable: true, sub: "bottom" },
-      { zh: "寬鬆長褲", en: "loose-fitting pants", slug: "loose-fitting-pants", sub: "bottom" },
-      { zh: "棉褲", en: "cotton pants", slug: "cotton-pants", sub: "bottom" },
+      { zh: "寬鬆長褲", en: "loose-fitting pants", slug: "loose-fitting-pants", sub: "bottom", colorable: true },
+      { zh: "棉褲", en: "cotton pants", slug: "cotton-pants", sub: "bottom" , colorable: true },
       { zh: "米色百褶中長裙", en: "light beige pleated midi skirt", slug: "pleated-midi-skirt", gender: "f", sub: "bottom" },
       // 連身服
       { zh: "連身裙", en: "dress", slug: "clothing-dress", colorable: true, gender: "f", sub: "onepiece" },
       { zh: "小禮服", en: "mini dress", slug: "clothing-mini-dress", colorable: true, gender: "f", sub: "onepiece" },
       { zh: "寬鬆白色夏日洋裝", en: "loose-fitting white summer dress", slug: "summer-dress", gender: "f", sub: "onepiece" },
-      { zh: "禮服", en: "elegant evening gown", slug: "evening-gown", sub: "onepiece" },
-      { zh: "公主服", en: "princess dress", slug: "princess-dress", sub: "onepiece" },
-      { zh: "水手服", en: "sailor school uniform", slug: "sailor-uniform", sub: "onepiece" },
-      { zh: "哥德蘿莉", en: "gothic lolita dress", slug: "gothic-lolita", sub: "onepiece" },
-      { zh: "和服", en: "traditional kimono", slug: "kimono", sub: "onepiece" },
-      { zh: "旗袍", en: "cheongsam dress", slug: "cheongsam", sub: "onepiece" },
+      { zh: "禮服", en: "elegant evening gown", slug: "evening-gown", sub: "onepiece" , colorable: true },
+      { zh: "公主服", en: "princess dress", slug: "princess-dress", sub: "onepiece" , colorable: true },
+      { zh: "水手服", en: "sailor school uniform", slug: "sailor-uniform", sub: "onepiece" , colorable: true },
+      { zh: "哥德蘿莉", en: "gothic lolita dress", slug: "gothic-lolita", sub: "onepiece" , colorable: true },
+      { zh: "和服", en: "traditional kimono", slug: "kimono", sub: "onepiece" , colorable: true },
+      { zh: "絲綢和服", en: "exquisite silk kimono", slug: "silk-kimono", sub: "onepiece", colorable: true },
+      { zh: "旗袍", en: "cheongsam dress", slug: "cheongsam", sub: "onepiece" , colorable: true },
       { zh: "古風服裝", en: "traditional Chinese attire", slug: "clothing-chinese-attire", colorable: true, sub: "onepiece" },
       { zh: "蕾絲白睡衣", en: "puffy pure white pajama with sleeves and edges decorated with lace", slug: "white-lace-pajama", sub: "onepiece" },
       // 外袍制服
@@ -585,8 +593,8 @@ const PROMPT_DATA = [
       { zh: "白色祭司袍", en: "white priestly robes", slug: "white-priestly-robes", gender: "f", sub: "robe" },
       { zh: "白色新郎禮服", en: "white groom's outfit", slug: "white-groom-outfit", gender: "m", sub: "robe" },
       { zh: "米色校服", en: "beige school uniform", slug: "beige-school-uniform", sub: "robe" },
-      { zh: "魔法師長袍", en: "wizard robe", slug: "wizard-robe", sub: "robe" },
-      { zh: "騎士鎧甲", en: "knight armor", slug: "knight-armor", sub: "robe" }
+      { zh: "魔法師長袍", en: "wizard robe", slug: "wizard-robe", sub: "robe" , colorable: true },
+      { zh: "騎士鎧甲", en: "knight armor", slug: "knight-armor", sub: "robe" , colorable: true }
     ]
   },
   {
@@ -641,7 +649,11 @@ const PROMPT_DATA = [
       { zh: "充滿活力動態", en: "energetic motion", slug: "energetic-motion" },
       { zh: "俏皮辣妹比YA", en: "playful gyaru peace sign", slug: "gyaru-peace-sign" },
       { zh: "髮裙隨海風飄動", en: "hair and dress flowing in the sea breeze", slug: "flowing-in-sea-breeze" },
-      { zh: "捲起袖子", en: "rolled sleeves", slug: "rolled-sleeves" }
+      { zh: "捲起袖子", en: "rolled sleeves", slug: "rolled-sleeves" },
+      { zh: "回眸看鏡頭", en: "turning {poss} head and glancing back at the viewer", slug: "turn-head-glance-viewer" },
+      { zh: "坐在梅枝上", en: "sitting on the branch of a plum blossom tree", slug: "sitting-on-plum-branch" },
+      { zh: "坐在樹冠深處", en: "sitting deep inside the tree canopy", slug: "sitting-inside-canopy" },
+      { zh: "口銜梅枝", en: "holding a sprig of plum blossom between {poss} lips", slug: "plum-sprig-in-lips" }
     ]
   },
   {
@@ -691,7 +703,21 @@ const PROMPT_DATA = [
       { zh: "黑貓相伴", en: "a black cat nearby", slug: "black-cat-nearby" },
       { zh: "潔白沙灘", en: "clean white sand", slug: "clean-white-sand" },
       { zh: "晴朗藍天", en: "clear blue sky", slug: "clear-blue-sky" },
-      { zh: "遠處棕櫚與度假建築", en: "a few distant palm trees and a simple white resort building", slug: "distant-palm-resort" }
+      { zh: "遠處棕櫚與度假建築", en: "a few distant palm trees and a simple white resort building", slug: "distant-palm-resort" },
+      { zh: "白鶴相伴", en: "a red-crowned white crane standing at {poss} side and reaching up to {poss} shoulder", slug: "red-crowned-crane" },
+      { zh: "松枝滿佈背景", en: "lush dark green pine branches spreading across the entire background", slug: "pine-branches-background" },
+      { zh: "松針佈滿上角", en: "dense pine needles filling the upper corners", slug: "pine-needles-corners" },
+      { zh: "蒼勁松枝框邊", en: "gnarled pine boughs framing both sides", slug: "pine-boughs-framing" },
+      { zh: "平面背景", en: "flat plain backdrop showing through the branches", slug: "flat-backdrop", colorable: true },
+      { zh: "松枝紅絲帶", en: "long red silk ribbons tied around the pine branches drifting in the wind", slug: "red-ribbons-on-pine" },
+      { zh: "積雪落松針與肩", en: "snow settling on the pine needles and {poss} shoulders", slug: "snow-on-pine-and-shoulders" },
+      { zh: "黃羽小鳥相伴", en: "several small bright yellow birds with solid golden yellow plumage perched on the branches nearby and on {poss} shoulder", slug: "yellow-birds-perched" },
+      { zh: "梅枝滿佈背景", en: "lush plum branches spreading across the entire background", slug: "plum-branches-background" },
+      { zh: "紅粉梅花佈滿上角", en: "abundant red and pink plum blossoms filling the upper corners", slug: "plum-blossoms-corners" },
+      { zh: "蒼勁梅枝框邊", en: "gnarled plum boughs framing both sides", slug: "plum-boughs-framing" },
+      { zh: "層疊梅枝環繞", en: "surrounded by dense layers of interlacing plum branches on all sides", slug: "interlacing-plum-branches" },
+      { zh: "枝條佔滿畫面", en: "branches filling the whole frame", slug: "branches-fill-frame" },
+      { zh: "前後交錯枝與花", en: "tangled boughs and blossoms in the foreground and background", slug: "tangled-boughs-fg-bg" }
     ]
   },
   {
@@ -714,7 +740,8 @@ const PROMPT_DATA = [
     hue: 340,
     words: [
       { zh: "粉色花瓣飄舞", en: "surrounded by fluttering pink petals", slug: "fluttering-pink-petals" },
-      { zh: "彩色泡泡漂浮", en: "colorful bubbles floating around", slug: "floating-colorful-bubbles" }
+      { zh: "彩色泡泡漂浮", en: "colorful bubbles floating around", slug: "floating-colorful-bubbles" },
+      { zh: "雪花飛舞", en: "snowflakes falling and swirling through the air", slug: "falling-snowflakes" }
     ]
   },
   {

@@ -922,7 +922,9 @@ body {
 /* ===== 頁籤式分類導覽 ===== */
 .group-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* 桌機左欄只有 270px，四個頁籤排一列時數字 badge 會被裁，所以排成 2x2；
+     手機版面板是滿版，另在 media query 裡改回一列四欄 */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
   min-width: 0;
 }
@@ -1309,6 +1311,73 @@ body {
 .persona-empty-msg { margin: 8px 2px; color: var(--text-dim); font-size: 0.82rem; }
 .persona-empty-msg[hidden] { display: none; }
 
+/* ===== 組合分頁（內建 profile 組合）===== */
+.combo-hint {
+  margin: 4px 2px 8px;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
+.combo-list {
+  display: grid;
+  gap: 6px;
+  max-height: 52vh;
+  max-height: 52dvh;
+  overflow-y: auto;
+}
+.combo-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.combo-item-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  border: 1px solid var(--word-border);
+  border-radius: 9px;
+  background: var(--word-bg);
+  color: var(--text);
+  padding: 8px 10px;
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+}
+.combo-item-btn:hover:not(:disabled) { border-color: var(--profile); color: var(--profile); }
+/* 套用中的組合：跟 profile 分頁同一套配色 */
+.combo-item-btn.active {
+  border-color: var(--profile);
+  background: var(--profile-soft);
+  color: var(--profile);
+}
+/* 代碼打錯的組合：停用但仍列出，讓維護的人看得到 */
+.combo-item-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  border-style: dashed;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.combo-item-name {
+  font-weight: 700;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combo-item-sub {
+  font-size: 0.7rem;
+  opacity: 0.6;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combo-empty-msg { margin: 8px 2px; color: var(--text-dim); font-size: 0.82rem; }
+.combo-empty-msg[hidden] { display: none; }
+
 /* ===== 自填詞記憶庫彈窗 ===== */
 .custom-library-btn { color: var(--profile); }
 .custom-library-btn:hover { background: var(--profile-soft); }
@@ -1472,6 +1541,8 @@ body {
 /* ===== 手機版（直向堆疊）===== */
 @media (max-width: 720px) {
   body { padding: 8px; }
+  .group-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
   .app-header { padding: 10px 8px; gap: 6px; }
   .app-header h1 { font-size: 1.05rem; letter-spacing: 1px; }
   .header-btn { width: 34px; height: 34px; font-size: 1rem; }

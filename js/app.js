@@ -121,8 +121,14 @@
     ? DEFAULT_PROFILE_CODES_NIJI6 : [];
   const DEFAULTS = [...DEFAULTS_NIJI7, ...DEFAULTS_NIJI6];
   const isDefaultCode = c => DEFAULTS.includes(c);
+  // 內建 profile 組合（來自 profile-combos.js）：只留結構正確的
+  const COMBOS = Array.isArray(typeof PROFILE_COMBOS !== "undefined" ? PROFILE_COMBOS : null)
+    ? PROFILE_COMBOS.filter(c => c && typeof c.name === "string" && Array.isArray(c.codes) && c.codes.length)
+    : [];
+  const comboCodes = new Set(COMBOS.flatMap(c => c.codes));
   let profileCodes = loadProfileCodes();
-  const isKnownCode = c => isDefaultCode(c) || profileCodes.includes(c);
+  // 組合成員也算「認得的代碼」，否則套用後重整會被 loadSelectedProfiles 濾掉
+  const isKnownCode = c => isDefaultCode(c) || profileCodes.includes(c) || comboCodes.has(c);
   let selectedProfiles = loadSelectedProfiles();
   let selectedNiji = loadNiji(); // "" | "6" | "7"
   let profileVersions = loadVersionMap(); // { code: "6" | "7" }（僅自訂代碼；預設代碼由清單歸屬決定）
@@ -134,6 +140,12 @@
   };
   // 在目前選擇的 niji 模式下，此代碼是否可用（niji 6 只能用 niji6 代碼；niji 7 或未選皆可用）
   const codeUsableNow = code => selectedNiji !== "6" || codeNijiVersion(code) === "6";
+  // 組合的 niji 版本由成員推導：全部是 niji6 代碼才算 niji6 組合
+  const comboNijiVersion = combo => combo.codes.every(c => codeNijiVersion(c) === "6") ? "6" : "7";
+  // 組合是否有效：成員必須真的存在於代碼清單（刻意不吃 isKnownCode，否則組合自己的代碼會互相背書、驗不出打錯字）
+  const comboInvalidCodes = combo => combo.codes.filter(c => !isDefaultCode(c) && !profileCodes.includes(c));
+  // 在目前 niji 模式下是否可套用：代碼要正確，且成員全部可用
+  const comboUsableNow = combo => !comboInvalidCodes(combo).length && combo.codes.every(codeUsableNow);
   let favoriteProfiles = loadArrayKey(FAVORITE_PROFILES_KEY);
   let pinnedProfiles = loadArrayKey(PINNED_PROFILES_KEY);
   let profileAliases = loadAliasMap(); // { code: 自訂顯示名稱 }
@@ -598,6 +610,7 @@
     [
       { key: "prompt", label: "提示詞" },
       { key: "profile", label: "profile" },
+      { key: "combo", label: "組合" },
       { key: "persona", label: "人設庫" }
     ].forEach(item => {
       const tab = document.createElement("button");
@@ -1045,6 +1058,80 @@
       });
     }
 
+    // 內建 profile 組合：點一下整組套用（取代目前已選代碼）；資料來自 js/profile-combos.js
+    function buildComboPanel() {
+      panel.classList.add("combo-panel");
+
+      const hint = document.createElement("p");
+      hint.className = "combo-hint";
+      hint.textContent = "點一下套用整組代碼，會取代目前已選的 profile；右側會立刻輪播這組的示範圖";
+      panel.appendChild(hint);
+
+      const list = document.createElement("div");
+      list.className = "combo-list";
+      panel.appendChild(list);
+
+      // 目前已選代碼與這組完全相同時，標成套用中（順序不影響）
+      const selectedSet = new Set(selectedProfiles);
+      const isApplied = combo => combo.codes.length === selectedSet.size &&
+        combo.codes.every(c => selectedSet.has(c));
+
+      let shown = 0;
+      COMBOS.forEach(combo => {
+        const bad = comboInvalidCodes(combo);
+        const ver = comboNijiVersion(combo);
+        // 代碼打錯的組合照樣列出但停用，讓維護的人一眼看到；只有版本不符才整組隱藏
+        if (!bad.length && !combo.codes.every(codeUsableNow)) return;
+        shown += 1;
+
+        const row = document.createElement("div");
+        row.className = "combo-row";
+
+        const btn = document.createElement("button");
+        btn.className = "combo-item-btn";
+        btn.type = "button";
+        btn.classList.toggle("active", !bad.length && isApplied(combo));
+        btn.disabled = !!bad.length;
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "combo-item-name";
+        nameSpan.textContent = combo.name;
+
+        const subSpan = document.createElement("span");
+        subSpan.className = "combo-item-sub";
+        if (bad.length) {
+          subSpan.textContent = `代碼有誤：${bad.join("、")}`;
+          btn.title = "這些代碼不在 profile-defaults.js 裡，請修正 js/profile-combos.js";
+        } else {
+          const desc = typeof combo.desc === "string" ? combo.desc.trim() : "";
+          subSpan.textContent = `${combo.codes.length} 個代碼 · n${ver}${desc ? ` · ${desc}` : ""}`;
+          // 完整成員清單放 tooltip，270px 的欄寬放不下
+          btn.title = combo.codes.map(c => aliasOf(c) || c).join("、");
+        }
+
+        btn.append(nameSpan, subSpan);
+        if (!bad.length) {
+          btn.addEventListener("click", () => {
+            selectedProfiles = combo.codes.filter(codeUsableNow);
+            saveProfiles();
+            renderMainPanel();
+            render();
+            showToast(`已套用「${combo.name}」`);
+          });
+        }
+        row.appendChild(btn);
+        list.appendChild(row);
+      });
+
+      const empty = document.createElement("p");
+      empty.className = "combo-empty-msg";
+      empty.textContent = COMBOS.length
+        ? "niji 6 模式下沒有可用的組合（組合成員需全部是 niji 6 代碼）"
+        : "還沒有內建組合，請編輯 js/profile-combos.js";
+      empty.hidden = shown > 0;
+      panel.appendChild(empty);
+    }
+
     renderMainPanel = () => {
       // 重建前記住 profile 清單的捲動位置，避免選/取消時跳回最上面
       const prevList = panel.querySelector(".profile-code-list");
@@ -1054,7 +1141,7 @@
       const focusCode = active?.closest?.(".profile-code-row")?.dataset.code || "";
       const focusCls = focusCode ? [...active.classList].find(c => c.startsWith("profile-")) : "";
       panel.innerHTML = "";
-      panel.classList.remove("profile-panel", "persona-panel");
+      panel.classList.remove("profile-panel", "persona-panel", "combo-panel");
       if (activeWorkspace === "profile") {
         buildProfilePanel();
         const newList = panel.querySelector(".profile-code-list");
@@ -1063,6 +1150,10 @@
           const row = [...panel.querySelectorAll(".profile-code-row")].find(r => r.dataset.code === focusCode);
           row?.querySelector(`.${focusCls}`)?.focus({ preventScroll: true }); // preventScroll：捲動位置上面已還原，別再跳
         }
+        return;
+      }
+      if (activeWorkspace === "combo") {
+        buildComboPanel();
         return;
       }
       if (activeWorkspace === "persona") {
@@ -1148,7 +1239,7 @@
   }
 
   function renderDrawer() {
-    if (activeWorkspace === "profile" || activeWorkspace === "persona") {
+    if (activeWorkspace !== "prompt") { // 只有提示詞分頁需要下方的選項抽屜
       optionDrawer.hidden = true;
       return;
     }
@@ -1551,7 +1642,7 @@
 
     const sub = document.createElement("p");
     sub.className = "modal-sub";
-    sub.textContent = "選擇一個顏色，工具會自動放在衣物名稱前方";
+    sub.textContent = "選擇一個顏色，工具會自動放在名稱前方；不選則不加顏色";
     panel.appendChild(sub);
 
     const list = document.createElement("div");
@@ -2032,6 +2123,14 @@
     input.focus();
   }
 
+  // 各主頁籤右上角的數字 badge 各自怎麼算
+  const WORKSPACE_COUNT = {
+    profile: () => selectedProfiles.length,
+    combo: () => COMBOS.filter(comboUsableNow).length,
+    persona: () => personaLibrary.length,
+    prompt: () => selected.length + Number(!!selectedGender)
+  };
+
   function renderCategoryState() {
     document.querySelectorAll(".group-tab").forEach(tab => {
       tab.classList.toggle("active", tab.dataset.workspace === activeWorkspace);
@@ -2049,11 +2148,7 @@
     });
     // 頁籤上的已選數量
     document.querySelectorAll(".gcount").forEach(badge => {
-      const n = badge.dataset.workspace === "profile"
-        ? selectedProfiles.length
-        : badge.dataset.workspace === "persona"
-          ? personaLibrary.length
-          : selected.length + Number(!!selectedGender);
+      const n = (WORKSPACE_COUNT[badge.dataset.workspace] || WORKSPACE_COUNT.prompt)();
       badge.textContent = n;
       badge.classList.toggle("show", n > 0);
     });

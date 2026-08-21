@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#1a2733">
 <title>Niji 提示詞配搭工具</title>
-<link rel="stylesheet" href="css/style.css?v=20260813a">
+<link rel="stylesheet" href="css/style.css?v=20260813d">
 </head>
 <body>
 
@@ -89,10 +89,11 @@
         <li><b>貼到 niji 上面就可以生成！</b></li>
       </ol>
 
-      <h3>🗂 三個主頁籤</h3>
+      <h3>🗂 四個主頁籤</h3>
       <ul>
         <li>✨ <b>提示詞</b>：集中選擇畫面、人物與背景裝飾；人物可先選 👩 女性／👨 男性切換詞庫</li>
         <li>🪪 <b>profile</b>：自行新增並可複選 Profile 代碼，選中的代碼會以 --profile 依序接在提示詞最後；可切換 <code>niji 6 / 7</code> 版本（niji 6 模式只顯示 niji 6 代碼）</li>
+        <li>🎛 <b>組合</b>：內建搭配好的 Profile 組合，點一下整組套用（會取代目前已選的代碼），右側立刻輪播這組的示範圖</li>
         <li>🎭 <b>人設庫</b>：把角色外觀（性別、髮型、髮色、眼睛、動物耳朵）整組存檔，一鍵套用到不同場景，只換角色、其餘保留</li>
         <li>最終格式會是 <code>完整的背景與人物提示詞 --niji 版本 --p 代碼</code>（有選 niji 版本才會加 <code>--niji</code>）</li>
       </ul>
@@ -123,6 +124,12 @@
         <li>想換色時，可用眼睛抽屜底部的「👁 異色瞳細節」隨時重開</li>
       </ul>
 
+      <h3>🐱 動物耳朵</h3>
+      <ul>
+        <li>「動物耳朵」分類點一下會跳出視窗，先選<b>種類</b>（貓／狗／狐／兔／狼／熊／虎／鼠耳，單選），再選<b>耳朵顏色</b>（可不選）</li>
+        <li>會自動組成 <code>white cat ears</code> 這種提示詞</li>
+      </ul>
+
       <h3>👗 服裝分組挑選</h3>
       <ul>
         <li>服裝分成 👕 上衣／👖 下著／👗 連身服／🥼 外袍制服四個<b>收合小組</b>，點小組標題展開，其餘會自動收合</li>
@@ -131,7 +138,7 @@
 
       <h3>👓 配件與隨身道具</h3>
       <ul>
-        <li>「配件」分類收錄領帶、眼鏡、墨鏡、護目鏡、拖鞋；其中<b>領帶</b>一樣可換色</li>
+        <li>「配件」分類收錄領帶、眼鏡、墨鏡、護目鏡、拖鞋、金鏈胸鏈、腰帶、項鍊、背包、厚底運動鞋；其中<b>領帶</b>一樣可換色</li>
         <li>進入「隨身道具」按<b>手持某個物品</b>，就能從彈窗挑選，重選會自動替換</li>
       </ul>
     </section>
@@ -172,10 +179,11 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/changelog.js?v=20260813a"></script>
+<script src="js/changelog.js?v=20260814a"></script>
+<script src="js/profile-combos.js?v=20260813a"></script>
 <script src="js/profile-defaults.js?v=20260810a"></script>
-<script src="js/config.js?v=20260721c"></script>
-<script src="js/prompts.js?v=20260728a"></script>
-<script src="js/app.js?v=20260813c"></script>
+<script src="js/config.js?v=20260814b"></script>
+<script src="js/prompts.js?v=20260814d"></script>
+<script src="js/app.js?v=20260814b"></script>
 </body>
 </html>
