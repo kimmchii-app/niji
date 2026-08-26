@@ -13,6 +13,7 @@ const CLOTHING_COLORS = [
   { zh: "紅色", en: "red", key: "red" },
   { zh: "橘色", en: "orange", key: "orange" },
   { zh: "粉色", en: "pink", key: "pink" },
+  { zh: "藕粉色", en: "lotus root pale pink", key: "lotus-pink" },
   { zh: "藍色", en: "blue", key: "blue" },
   { zh: "深藍色", en: "deep blue", key: "deep-blue" },
   { zh: "綠色", en: "green", key: "green" },

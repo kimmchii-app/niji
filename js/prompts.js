@@ -38,7 +38,8 @@ const PROMPT_DATA = [
       { zh: "優雅極簡", en: "elegant minimalism", slug: "elegant-minimalism" },
       { zh: "雜誌編輯插畫", en: "editorial illustration", slug: "editorial-illustration" },
       { zh: "可見筆觸", en: "visible brushstrokes", slug: "visible-brushstrokes" },
-      { zh: "柔和厚塗質感", en: "soft impasto texture", slug: "soft-impasto-texture" }
+      { zh: "柔和厚塗質感", en: "soft impasto texture", slug: "soft-impasto-texture" },
+      { zh: "古典日本畫", en: "classical Japanese painting", slug: "classical-japanese-painting" }
     ]
   },
   {
@@ -98,7 +99,9 @@ const PROMPT_DATA = [
       { zh: "浪漫神秘氛圍", en: "romantic and mysterious ambiance", slug: "romantic-mysterious-ambiance" },
       { zh: "悠閒度假氛圍", en: "lively and carefree vacation mood", slug: "vacation-mood" },
       { zh: "清新感", en: "refreshing", slug: "refreshing" },
-      { zh: "輕盈通透", en: "airy", slug: "airy" }
+      { zh: "輕盈通透", en: "airy", slug: "airy" },
+      { zh: "空氣層次漸變", en: "atmospheric depth with soft tonal gradation", slug: "atmospheric-gradation" },
+      { zh: "歡快俏皮氛圍", en: "cheerful whimsical playful mood", slug: "cheerful-whimsical-mood" }
     ]
   },
   {
@@ -124,7 +127,12 @@ const PROMPT_DATA = [
       { zh: "臉部聚光", en: "spotlight illuminating face", slug: "spotlight-on-face" },
       { zh: "柔和金光", en: "warm soft golden lighting", slug: "warm-golden-light" },
       { zh: "戲劇性陰影", en: "atmospheric dramatic shadows", slug: "dramatic-shadows" },
-      { zh: "溫暖琥珀光", en: "warm amber light", slug: "warm-amber-light" }
+      { zh: "溫暖琥珀光", en: "warm amber light", slug: "warm-amber-light" },
+      { zh: "水面月光倒映", en: "a pale yellow moonlight glow reflecting on the water below", slug: "moonlight-on-water" },
+      { zh: "水面向上打光", en: "underlit by soft luminous light radiating up from the water", slug: "underlit-from-water" },
+      { zh: "無強烈陰影", en: "no harsh shadows", slug: "no-harsh-shadows" },
+      { zh: "明亮象牙白光", en: "bright warm ivory light filling the scene", slug: "bright-ivory-light" },
+      { zh: "均勻柔和照明", en: "gentle even illumination", slug: "gentle-even-illumination" }
     ]
   },
   {
@@ -158,7 +166,8 @@ const PROMPT_DATA = [
       { zh: "優雅賭場沙龍", en: "elegant casino salon", slug: "casino-salon" },
       { zh: "溫馨兒童圖書館", en: "cozy children's library", slug: "children-library" },
       { zh: "夏日清晨", en: "summer morning", slug: "summer-morning" },
-      { zh: "海濱度假村", en: "beach resort", slug: "beach-resort" }
+      { zh: "海濱度假村", en: "beach resort", slug: "beach-resort" },
+      { zh: "朱漆欄橋", en: "an ornate lacquered bridge painted deep red with black railings and gold detailing", slug: "lacquered-red-bridge" }
     ]
   },
   {
@@ -428,6 +437,7 @@ const PROMPT_DATA = [
       { zh: "頭飾", en: "hair ornament", slug: "hair-ornament" },
       { zh: "寬簷草帽", en: "wide-brim straw hat", slug: "wide-brim-straw-hat" },
       { zh: "金珊瑚珠髮簪", en: "ornate golden kanzashi with red coral beads and dangling chains", slug: "golden-coral-kanzashi" },
+      { zh: "素金髮簪", en: "a small simple gold hairpin", slug: "simple-gold-hairpin" },
       { zh: "金鏈髮簪", en: "ornate golden kanzashi with dangling chains", slug: "golden-chain-kanzashi" }
     ]
   },
@@ -540,7 +550,10 @@ const PROMPT_DATA = [
       { zh: "冷顏", en: "a cold expression", slug: "cold-expression" },
       { zh: "淡然不為所動", en: "unbothered", slug: "unbothered" },
       { zh: "溫柔友善神情", en: "soft and friendly expression", slug: "soft-friendly-expression" },
-      { zh: "俏皮表情", en: "playful expression", slug: "playful-expression" }
+      { zh: "俏皮表情", en: "playful expression", slug: "playful-expression" },
+      { zh: "眼神清亮專注", en: "clear focused gaze", slug: "clear-focused-gaze" },
+      { zh: "閉唇淺笑", en: "a soft closed-lip smile", slug: "closed-lip-smile" },
+      { zh: "自然淡紅暈", en: "faint natural blush on {poss} cheeks", slug: "faint-natural-blush" }
     ]
   },
   {
@@ -585,6 +598,8 @@ const PROMPT_DATA = [
       { zh: "哥德蘿莉", en: "gothic lolita dress", slug: "gothic-lolita", sub: "onepiece" , colorable: true },
       { zh: "和服", en: "traditional kimono", slug: "kimono", sub: "onepiece" , colorable: true },
       { zh: "絲綢和服", en: "exquisite silk kimono", slug: "silk-kimono", sub: "onepiece", colorable: true },
+      { zh: "金邊刺繡和服", en: "kimono with golden trim along the collar and sleeve edges and delicate gold embroidery", slug: "embroidered-kimono", sub: "onepiece", colorable: true },
+      { zh: "金邊和服", en: "kimono with delicate gold trim along the collar and sleeve edges", slug: "gold-trim-kimono", sub: "onepiece", colorable: true },
       { zh: "旗袍", en: "cheongsam dress", slug: "cheongsam", sub: "onepiece" , colorable: true },
       { zh: "古風服裝", en: "traditional Chinese attire", slug: "clothing-chinese-attire", colorable: true, sub: "onepiece" },
       { zh: "蕾絲白睡衣", en: "puffy pure white pajama with sleeves and edges decorated with lace", slug: "white-lace-pajama", sub: "onepiece" },
@@ -653,7 +668,12 @@ const PROMPT_DATA = [
       { zh: "回眸看鏡頭", en: "turning {poss} head and glancing back at the viewer", slug: "turn-head-glance-viewer" },
       { zh: "坐在梅枝上", en: "sitting on the branch of a plum blossom tree", slug: "sitting-on-plum-branch" },
       { zh: "坐在樹冠深處", en: "sitting deep inside the tree canopy", slug: "sitting-inside-canopy" },
-      { zh: "口銜梅枝", en: "holding a sprig of plum blossom between {poss} lips", slug: "plum-sprig-in-lips" }
+      { zh: "口銜梅枝", en: "holding a sprig of plum blossom between {poss} lips", slug: "plum-sprig-in-lips" },
+      { zh: "俯臥撐頰", en: "lying prone with one hand propping up {poss} cheek", slug: "prone-hand-on-cheek" },
+      { zh: "另一手擱橋板", en: "{poss} other arm resting on the bridge planks", slug: "arm-on-bridge-planks" },
+      { zh: "上身撐起轉向鏡頭", en: "{poss} upper body propped up with head lifted and turned toward the viewer", slug: "upper-body-propped-toward-viewer" },
+      { zh: "直視鏡頭", en: "eyes open looking directly at the viewer", slug: "eyes-looking-at-viewer" },
+      { zh: "另一手張開前伸", en: "{poss} other arm reaching out with an open hand", slug: "other-arm-open-hand" }
     ]
   },
   {
@@ -675,7 +695,8 @@ const PROMPT_DATA = [
       { zh: "手持聖經", en: "holding a Bible", slug: "holding-bible" },
       { zh: "手持書本", en: "holding a book", slug: "holding-book-generic" },
       { zh: "手持玫瑰花", en: "holding a rose", slug: "holding-rose" },
-      { zh: "手持繪本", en: "holding a children's picture book", slug: "holding-picture-book" }
+      { zh: "手持繪本", en: "holding a children's picture book", slug: "holding-picture-book" },
+      { zh: "手持手鞠球", en: "holding a temari ball wrapped in vivid multicolored embroidery threads with bright red green and gold silk threads forming geometric patterns", slug: "holding-temari-ball" }
     ]
   },
   /* ========== 背景裝飾（輸出時排在最後） ========== */
@@ -717,7 +738,17 @@ const PROMPT_DATA = [
       { zh: "蒼勁梅枝框邊", en: "gnarled plum boughs framing both sides", slug: "plum-boughs-framing" },
       { zh: "層疊梅枝環繞", en: "surrounded by dense layers of interlacing plum branches on all sides", slug: "interlacing-plum-branches" },
       { zh: "枝條佔滿畫面", en: "branches filling the whole frame", slug: "branches-fill-frame" },
-      { zh: "前後交錯枝與花", en: "tangled boughs and blossoms in the foreground and background", slug: "tangled-boughs-fg-bg" }
+      { zh: "前後交錯枝與花", en: "tangled boughs and blossoms in the foreground and background", slug: "tangled-boughs-fg-bg" },
+      { zh: "菖蒲花叢環繞", en: "Japanese iris flowers blooming densely all around", slug: "iris-blooming-around", colorable: true },
+      { zh: "劍形菖蒲葉夾道", en: "tall slender green sword-shaped iris leaves rising densely on both sides and reaching the top of the frame", slug: "iris-leaves-both-sides" },
+      { zh: "青碧靛藍層次背景", en: "layered background of deep teal green and dark indigo blue tones blending together", slug: "teal-indigo-background" },
+      { zh: "遠處暗色樹影", en: "faint dark foliage and tree shadows dissolving into the distance", slug: "distant-tree-shadows" },
+      { zh: "指尖停蝶", en: "an iridescent butterfly with shimmering electric blue wings resting on {poss} fingertips", slug: "butterfly-on-fingertips" },
+      { zh: "蝶翼寶石光澤", en: "brilliant electric blue and glowing ruby red wings with a pearlescent jewel-like sheen", slug: "jewel-butterfly-wings" },
+      { zh: "絲線曳尾", en: "thin silk threads drifting through the air tracing curved trails behind each butterfly", slug: "silk-thread-trails" },
+      { zh: "牡丹花叢環繞", en: "large vivid peony blossoms in rich reds and pinks crowding densely on all sides", slug: "peony-blossoms-around" },
+      { zh: "層疊花瓣佔滿前景", en: "layered petals filling the foreground and reaching the top of the frame", slug: "layered-petals-foreground" },
+      { zh: "暖奶白背景微光", en: "warm creamy white background glowing softly behind", slug: "creamy-white-background" }
     ]
   },
   {
@@ -741,7 +772,8 @@ const PROMPT_DATA = [
     words: [
       { zh: "粉色花瓣飄舞", en: "surrounded by fluttering pink petals", slug: "fluttering-pink-petals" },
       { zh: "彩色泡泡漂浮", en: "colorful bubbles floating around", slug: "floating-colorful-bubbles" },
-      { zh: "雪花飛舞", en: "snowflakes falling and swirling through the air", slug: "falling-snowflakes" }
+      { zh: "雪花飛舞", en: "snowflakes falling and swirling through the air", slug: "falling-snowflakes" },
+      { zh: "虹彩蝶群飛舞", en: "iridescent butterflies fluttering all around", slug: "butterflies-fluttering" }
     ]
   },
   {
